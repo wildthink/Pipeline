@@ -131,6 +131,22 @@ extension Database.Statement {
 		}
 	}
 
+	/// Returns the next result row or `nil` if none.
+	///
+	/// - returns: The next result row of returned data.
+	///
+	/// - throws: An error if the statement encountered an execution error.
+	public func nextRow() throws -> Database.Row? {
+		switch sqlite3_step(preparedStatement) {
+		case SQLITE_ROW:
+			return Database.Row(statement: self)
+		case SQLITE_DONE:
+			return nil
+		default:
+			throw SQLiteError(fromPreparedStatement: preparedStatement)
+		}
+	}
+
 	/// Resets the statement to its initial state, ready to be re-executed.
 	///
 	/// - note: This function does not change the value of  any bound SQL parameters.
