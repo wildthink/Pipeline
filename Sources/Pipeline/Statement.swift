@@ -343,8 +343,7 @@ extension Database.Statement {
 	public func bind(_ value: Int64?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(value, toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -363,8 +362,7 @@ extension Database.Statement {
 	public func bind(_ value: Double?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(value, toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -383,8 +381,7 @@ extension Database.Statement {
 	public func bind(_ value: String?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(value, toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -403,8 +400,7 @@ extension Database.Statement {
 	public func bind(_ value: Data?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(value, toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -440,8 +436,7 @@ extension Database.Statement {
 	public func bind(_ value: Int?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(Int64(value), toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -475,8 +470,7 @@ extension Database.Statement {
 	public func bind(_ value: UInt?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(Int64(value), toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}
@@ -509,8 +503,7 @@ extension Database.Statement {
 	public func bind(_ value: Float?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(Double(value), toParameter: index)
-		}
-		else {
+		} else {
 			try bindNull(toParameter: index)
 		}
 	}

@@ -31,8 +31,7 @@ extension Database.Error: CustomStringConvertible {
 	public var description: String {
 		if let details = details {
 			return "\(message): \(details)"
-		}
-		else {
+		} else {
 			return message
 		}
 	}

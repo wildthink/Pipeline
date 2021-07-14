@@ -77,8 +77,7 @@ extension SQLiteError: CustomStringConvertible {
 	public var description: String {
 		if let details = details {
 			return "\(code): \(details)"
-		}
-		else {
+		} else {
 			return "\(code)"
 		}
 	}
