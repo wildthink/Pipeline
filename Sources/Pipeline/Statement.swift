@@ -525,7 +525,7 @@ extension Database.Statement {
 	/// - throws: An error if `values` couldn't be bound.
 	///
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind(_ values: [Int32], toParameter index: Int) throws {
+	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Int32 {
 		precondition(index > 0)
 		let mem = UnsafeMutableBufferPointer<Int32>.allocate(capacity: values.count)
 		_ = mem.initialize(from: values)
@@ -547,7 +547,7 @@ extension Database.Statement {
 	/// - throws: An error if `values` couldn't be bound.
 	///
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind(_ values: [Int64], toParameter index: Int) throws {
+	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Int64 {
 		precondition(index > 0)
 		let mem = UnsafeMutableBufferPointer<Int64>.allocate(capacity: values.count)
 		_ = mem.initialize(from: values)
@@ -569,7 +569,7 @@ extension Database.Statement {
 	/// - throws: An error if `values` couldn't be bound.
 	///
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind(_ values: [Double], toParameter index: Int) throws {
+	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Double {
 		precondition(index > 0)
 		let mem = UnsafeMutableBufferPointer<Double>.allocate(capacity: values.count)
 		_ = mem.initialize(from: values)
@@ -591,7 +591,7 @@ extension Database.Statement {
 	/// - throws: An error if `values` couldn't be bound.
 	///
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind(_ values: [String], toParameter index: Int) throws {
+	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == String {
 		precondition(index > 0)
 		let count = values.count
 
