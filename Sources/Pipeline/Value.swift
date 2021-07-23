@@ -82,37 +82,21 @@ extension Database.Row {
 }
 
 extension Database.Value: Equatable {
-	public static func ==(lhs: Database.Value, rhs: Database.Value) -> Bool {
-		switch(lhs) {
-		case .integer(let i1):
-			switch(rhs) {
-			case .integer(let i2):
-				return i1 == i2
-			default:
-				return false
-			}
-		case .float(let f1):
-			switch(rhs) {
-			case .float(let f2):
-				return f1 == f2
-			default:
-				return false
-			}
-		case .text(let t1):
-			switch(rhs) {
-			case .text(let t2):
-				return t1 == t2
-			default:
-				return false
-			}
-		case .blob(let b1):
-			switch(rhs) {
-			case .blob(let b2):
-				return b1 == b2
-			default:
-				return false
-			}
-		case .null:
+	public static func == (lhs: Database.Value, rhs: Database.Value) -> Bool {
+		switch (lhs, rhs) {
+		case (.integer(let i1), .integer(let i2)):
+			return i1 == i2
+		case (.float(let f1), .float(let f2)):
+			return f1 == f2
+		case (.text(let t1), .text(let t2)):
+			return t1 == t2
+		case (.blob(let b1), .blob(let b2)):
+			return b1 == b2
+		case (.null, .null):
+			// SQL null compares unequal to everything, including null.
+			// Is that really the desired behavior here?
+			return false
+		default:
 			return false
 		}
 	}
