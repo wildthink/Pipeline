@@ -422,7 +422,7 @@ extension Database.Statement {
 		try bind(Int64(value), toParameter: index)
 	}
 
-	/// Binds `value` to the SQL parameter at `index`.
+	/// Binds `value` or null to the SQL parameter at `index`.
 	///
 	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
 	///
@@ -456,7 +456,7 @@ extension Database.Statement {
 		try bind(Int64(value), toParameter: index)
 	}
 
-	/// Binds `value` to the SQL parameter at `index`.
+	/// Binds `value` or null to the SQL parameter at `index`.
 	///
 	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
 	///
@@ -474,6 +474,7 @@ extension Database.Statement {
 			try bindNull(toParameter: index)
 		}
 	}
+
 	/// Binds `value` to the SQL parameter at `index`.
 	///
 	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
@@ -489,7 +490,7 @@ extension Database.Statement {
 		try bind(Double(value), toParameter: index)
 	}
 
-	/// Binds `value` to the SQL parameter at `index`.
+	/// Binds `value` or null to the SQL parameter at `index`.
 	///
 	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
 	///
@@ -503,6 +504,76 @@ extension Database.Statement {
 	public func bind(_ value: Float?, toParameter index: Int) throws {
 		if let value = value {
 			try bind(Double(value), toParameter: index)
+		} else {
+			try bindNull(toParameter: index)
+		}
+	}
+}
+
+extension Database.Statement {
+	/// Binds `value` to the SQL parameter at `index`.
+	///
+	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	///
+	/// - precondition: `index > 0`
+	/// - requires: `index < parameterCount`
+	///
+	/// - parameter value: The desired value of the SQL parameter.
+	/// - parameter index: The index of the SQL parameter to bind.
+	///
+	/// - throws: An error if `value` couldn't be bound.
+	public func bind(_ value: UUID, toParameter index: Int) throws {
+		try bind(value.uuidString.lowercased(), toParameter: index)
+	}
+
+	/// Binds `value` or null to the SQL parameter at `index`.
+	///
+	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	///
+	/// - precondition: `index > 0`
+	/// - requires: `index < parameterCount`
+	///
+	/// - parameter value: The desired value of the SQL parameter.
+	/// - parameter index: The index of the SQL parameter to bind.
+	///
+	/// - throws: An error if `value` couldn't be bound.
+	public func bind(_ value: UUID?, toParameter index: Int) throws {
+		if let value = value {
+			try bind(value, toParameter: index)
+		} else {
+			try bindNull(toParameter: index)
+		}
+	}
+
+	/// Binds `value` to the SQL parameter at `index`.
+	///
+	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	///
+	/// - precondition: `index > 0`
+	/// - requires: `index < parameterCount`
+	///
+	/// - parameter value: The desired value of the SQL parameter.
+	/// - parameter index: The index of the SQL parameter to bind.
+	///
+	/// - throws: An error if `value` couldn't be bound.
+	public func bind(_ value: URL, toParameter index: Int) throws {
+		try bind(value.absoluteString, toParameter: index)
+	}
+
+	/// Binds `value` or null to the SQL parameter at `index`.
+	///
+	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	///
+	/// - precondition: `index > 0`
+	/// - requires: `index < parameterCount`
+	///
+	/// - parameter value: The desired value of the SQL parameter.
+	/// - parameter index: The index of the SQL parameter to bind.
+	///
+	/// - throws: An error if `value` couldn't be bound.
+	public func bind(_ value: URL?, toParameter index: Int) throws {
+		if let value = value {
+			try bind(value, toParameter: index)
 		} else {
 			try bindNull(toParameter: index)
 		}

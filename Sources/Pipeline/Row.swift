@@ -347,3 +347,87 @@ extension Database.Row {
 		return Float(try double(forColumn: index))
 	}
 }
+
+extension Database.Row {
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value.
+	public func uuid(forColumn index: Int) throws -> UUID {
+		let s = try string(forColumn: index)
+		guard let uuid = UUID(uuidString: s) else {
+			throw Database.Error(message: "\"\(s)\" is not a valid UUID")
+		}
+		return uuid
+	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value.
+	public func uuidOrNil(forColumn index: Int) throws -> UUID? {
+		if try typeofColumn(index) == .null {
+			return nil
+		}
+		return try uuid(forColumn: index)
+	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value.
+	public func url(forColumn index: Int) throws -> URL {
+		let s = try string(forColumn: index)
+		guard let url = URL(string: s) else {
+			throw Database.Error(message: "\"\(s)\" is not a valid URL")
+		}
+		return url
+	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value.
+	public func urlOrNil(forColumn index: Int) throws -> URL? {
+		if try typeofColumn(index) == .null {
+			return nil
+		}
+		return try url(forColumn: index)
+	}
+}
