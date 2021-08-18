@@ -28,6 +28,9 @@ public final class Database {
 	/// The underlying `sqlite3 *` database
 	let databaseConnection: SQLiteDatabaseConnection
 
+	/// The database's custom busy handler
+	var busyHandler: UnsafeMutablePointer<BusyHandler>?
+
 	/// The subject sending events from `sqlite3_update_hook()`
 	private lazy var tableChangeEventSubject: PassthroughSubject<TableChangeEvent, Never> = {
 		let subject = PassthroughSubject<TableChangeEvent, Never>()
@@ -55,6 +58,8 @@ public final class Database {
 	deinit {
 		_ = sqlite3_close(databaseConnection)
 //		_ = sqlite3_close_v2(databaseConnection)
+		busyHandler?.deinitialize(count: 1)
+		busyHandler?.deallocate()
 	}
 
 	/// Creates a temporary database.
@@ -114,7 +119,73 @@ public final class Database {
 		precondition(db != nil)
 		self.init(databaseConnection: db.unsafelyUnwrapped)
 	}
+}
 
+extension Database {
+	/// `true` if this database is read only, `false` otherwise.
+	public var isReadOnly: Bool {
+		sqlite3_db_readonly(self.databaseConnection, nil) == 1
+	}
+
+	/// The rowid of the most recent successful `INSERT` into a rowid table or virtual table.
+	public var lastInsertRowid: Int64 {
+		get {
+			sqlite3_last_insert_rowid(databaseConnection)
+		}
+		set {
+			sqlite3_set_last_insert_rowid(databaseConnection, newValue)
+		}
+	}
+
+	/// The number of rows modified, inserted, or deleted by the most recently completed `INSERT`, `UPDATE` or `DELETE` statement.
+	public var changes: Int {
+		// TODO: Update to sqlite3_changes64
+		Int(sqlite3_changes(databaseConnection))
+	}
+
+	/// The total number of rows inserted, modified, or deleted by all `INSERT`, `UPDATE` or `DELETE` statements.
+	public var totalChanges: Int {
+		// TODO: Update to sqlite3_total_changes64
+		Int(sqlite3_total_changes(databaseConnection))
+	}
+
+	/// Interrupts a long-running query.
+	public func interrupt() {
+		sqlite3_interrupt(databaseConnection)
+	}
+
+	/// Returns the location of the file associated with database `name`.
+	///
+	/// - note: The main database file has the name *main*
+	///
+	/// - parameter name: The name of the attached database whose location is desired
+	///
+	/// - throws: An error if there is no attached database with the specified name, or if `name` is a temporary or in-memory database
+	///
+	/// - returns: The URL for the file associated with database `name`
+	public func url(forDatabase name: String = "main") throws -> URL {
+		guard let path = sqlite3_db_filename(databaseConnection, name) else {
+			throw Database.Error(message: "The database \"\(name)\" does not exist or is a temporary or in-memory database")
+		}
+		return URL(fileURLWithPath: String(cString: path))
+	}
+
+	/// Performs a low-level SQLite database operation.
+	///
+	/// **Use of this function should be avoided whenever possible**
+	///
+	/// - parameter block: A closure performing the database operation.
+	/// - parameter databaseConnection: The raw `sqlite3 *` database connection handle.
+	///
+	/// - throws: Any error thrown in `block`.
+	///
+	/// - returns: The value returned by `block`.
+	public func withUnsafeRawSQLiteDatabaseConnection<T>(block: (_ databaseConnection: SQLiteDatabaseConnection) throws -> (T)) rethrows -> T {
+		try block(databaseConnection)
+	}
+}
+
+extension Database {
 	/// Executes an SQL statement.
 	///
 	/// - parameter sql: The SQL statement to execute
