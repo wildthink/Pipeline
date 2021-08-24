@@ -21,8 +21,8 @@ extension Database {
 	public func setCommitHook(_ block: @escaping CommitHook) {
 		let context = UnsafeMutablePointer<CommitHook>.allocate(capacity: 1)
 		context.initialize(to: block)
-		if let old = sqlite3_commit_hook(databaseConnection, { context in
-			return context.unsafelyUnwrapped.assumingMemoryBound(to: CommitHook.self).pointee() ? 0 : 1
+		if let old = sqlite3_commit_hook(databaseConnection, {
+			$0.unsafelyUnwrapped.assumingMemoryBound(to: CommitHook.self).pointee() ? 0 : 1
 		}, context) {
 			let oldContext = old.assumingMemoryBound(to: CommitHook.self)
 			oldContext.deinitialize(count: 1)
@@ -50,8 +50,8 @@ extension Database {
 	public func setRollbackHook(_ block: @escaping RollbackHook) {
 		let context = UnsafeMutablePointer<RollbackHook>.allocate(capacity: 1)
 		context.initialize(to: block)
-		if let old = sqlite3_rollback_hook(databaseConnection, { context in
-			context.unsafelyUnwrapped.assumingMemoryBound(to: RollbackHook.self).pointee()
+		if let old = sqlite3_rollback_hook(databaseConnection, {
+			$0.unsafelyUnwrapped.assumingMemoryBound(to: RollbackHook.self).pointee()
 		}, context) {
 			let oldContext = old.assumingMemoryBound(to: RollbackHook.self)
 			oldContext.deinitialize(count: 1)
