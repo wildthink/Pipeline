@@ -84,7 +84,7 @@ extension RowDecoderGuts: Decoder {
 		guard case let .row(row) = payload else {
 			throw DecodingError.typeMismatch(Database.Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Row but found Database.Value."))
 		}
-		let container = KeyedContainer<Key>(values: try row.columnValues(), decoder: self, codingPath: codingPath)
+		let container = KeyedContainer<Key>(values: try row.valueDictionary(), decoder: self, codingPath: codingPath)
 		return KeyedDecodingContainer(container)
 	}
 
