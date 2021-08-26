@@ -68,7 +68,11 @@ extension Database.Row {
 	///
 	/// - returns: An array of the row's values.
 	public func values() throws -> [Database.Value] {
-		return try (0 ..< statement.columnCount).map { try value(forColumn: $0) }
+		var values: [Database.Value] = []
+		for i in 0 ..< statement.columnCount {
+			values.append(try value(forColumn: i))
+		}
+		return values
 	}
 
 	/// Returns the names and values of all columns in the row.
@@ -76,8 +80,24 @@ extension Database.Row {
 	/// - warning: This method will fail at runtime if the column names are not unique.
 	///
 	/// - returns: A dictionary of the row's values keyed by column name.
-	public func columnValues() throws -> [String: Database.Value] {
+	public func valueDictionary() throws -> [String: Database.Value] {
 		return try Dictionary(uniqueKeysWithValues: statement.columnNames.enumerated().map({ ($0.element, try value(forColumn: $0.offset)) }))
+	}
+}
+
+extension Database.Row {
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - returns: The column's value or `nil` if null, the column doesn't exist, or contains an illegal value.
+	public subscript(forColumn index: Int) -> Database.Value? {
+		return try? value(forColumn: index)
 	}
 }
 
