@@ -55,7 +55,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds
 	///
@@ -71,7 +71,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds
 	///
@@ -110,7 +110,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -134,7 +134,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -158,7 +158,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -182,7 +182,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -208,11 +208,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	///
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func int64OrNil(forColumn index: Int) throws -> Int64? {
@@ -230,11 +230,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	///
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func doubleOrNil(forColumn index: Int) throws -> Double? {
@@ -252,11 +252,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	///
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func stringOrNil(forColumn index: Int) throws -> String? {
@@ -274,11 +274,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	///
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func dataOrNil(forColumn index: Int) throws -> Data? {
@@ -298,7 +298,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -317,7 +317,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -336,7 +336,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -345,6 +345,25 @@ extension Database.Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func float(forColumn index: Int) throws -> Float {
 		return Float(try double(forColumn: index))
+	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: `true` if the column's value is not 0.
+	///
+	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
+	public func bool(forColumn index: Int) throws -> Bool {
+		return try int64(forColumn: index) != 0
 	}
 }
 
@@ -357,7 +376,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -378,11 +397,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	public func uuidOrNil(forColumn index: Int) throws -> UUID? {
 		if try typeofColumn(index) == .null {
 			return nil
@@ -398,7 +417,7 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
@@ -419,11 +438,11 @@ extension Database.Row {
 	/// - precondition: `index >= 0`
 	/// - requires: `index < self.columnCount`
 	///
-	/// - parameter index: The index of the desired column
+	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
 	///
-	/// - returns: The column's value.
+	/// - returns: The column's value or `nil` if null.
 	public func urlOrNil(forColumn index: Int) throws -> URL? {
 		if try typeofColumn(index) == .null {
 			return nil
