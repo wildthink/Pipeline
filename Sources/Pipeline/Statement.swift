@@ -101,6 +101,22 @@ extension Database {
 }
 
 extension Database.Statement {
+	/// Performs a low-level SQLite statement operation.
+	///
+	/// - attention: **Use of this function should be avoided whenever possible.**
+	///
+	/// - parameter block: A closure performing the statement operation.
+	/// - parameter preparedStatement: The raw `sqlite3_stmt *` prepared statement object.
+	///
+	/// - throws: Any error thrown in `block`.
+	///
+	/// - returns: The value returned by `block`.
+	public func withUnsafeSQLitePreparedStatement<T>(block: (_ preparedStatement: SQLitePreparedStatement) throws -> (T)) rethrows -> T {
+		try block(preparedStatement)
+	}
+}
+
+extension Database.Statement {
 	/// Executes the statement and discards any result rows.
 	///
 	/// - throws: An error if the statement could not be executed.
@@ -167,7 +183,7 @@ extension Database.Statement {
 		return String(cString: str.unsafelyUnwrapped)
 	}
 
-	#if SQLITE_ENABLE_NORMALIZE
+#if SQLITE_ENABLE_NORMALIZE
 	/// The normalized SQL text of the statement.
 	public var normalizedSQL: String {
 		guard let str = sqlite3_normalized_sql(preparedStatement) else {
@@ -175,7 +191,7 @@ extension Database.Statement {
 		}
 		return String(cString: str)
 	}
-	#endif
+#endif
 
 	/// The SQL text of the statement with bound parameters expanded.
 	public var expandedSQL: String {
