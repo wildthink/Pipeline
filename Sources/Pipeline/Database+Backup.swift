@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Database {
 	/// A callback for reporting the progress of a database backup.

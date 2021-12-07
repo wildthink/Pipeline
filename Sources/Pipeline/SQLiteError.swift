@@ -4,7 +4,7 @@
 // MIT license
 //
 
-import CSQLite
+
 
 /// An `Error` supplying an SQLite error code and description.
 public struct SQLiteError: Error {

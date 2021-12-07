@@ -5,8 +5,10 @@
 //
 
 import Foundation
-import CSQLite
 
+
+@available(iOS 15.0, *)
+@available(macOS 12.0, *)
 extension Database {
 	/// Possible database transaction types.
 	///

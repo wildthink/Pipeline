@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Database {
 	/// A custom SQL function.
@@ -258,7 +258,8 @@ extension Database {
 	/// - throws:  An error if the SQL aggregate window function can't be added.
 	///
 	/// - seealso: [User-Defined Aggregate Window Functions](https://sqlite.org/windowfunctions.html#udfwinfunc)
-	public func addAggregateWindowFunction(_ name: String, arity: Int = -1, flags: SQLFunctionFlags = [.deterministic, .directOnly], _ function: SQLAggregateWindowFunction) throws {
+    @available(macOS 10.15, *)
+    public func addAggregateWindowFunction(_ name: String, arity: Int = -1, flags: SQLFunctionFlags = [.deterministic, .directOnly], _ function: SQLAggregateWindowFunction) throws {
 		let context_ptr = UnsafeMutablePointer<SQLAggregateWindowFunction>.allocate(capacity: 1)
 		context_ptr.initialize(to: function)
 		let function_flags = SQLITE_UTF8 | flags.asSQLiteFlags()

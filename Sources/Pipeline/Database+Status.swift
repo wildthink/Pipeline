@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Database {
 	/// Available database status parameters.

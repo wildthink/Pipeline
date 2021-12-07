@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Database {
 	/// A native data type that may be stored in an SQLite database.

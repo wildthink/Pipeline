@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 import Combine
 
 /// An `sqlite3 *` object.

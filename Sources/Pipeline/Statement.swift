@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// An `sqlite3_stmt *` object.
 ///
@@ -596,7 +596,7 @@ extension Database.Statement {
 	}
 }
 
-//#if CSQLITE_CARRAY
+#if SQLite3_CARRAY
 
 extension Database.Statement {
 	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
@@ -730,4 +730,4 @@ private func scan<S: Sequence, U>(_ seq: S, _ initial: U, _ combine: (U, S.Eleme
 	return result
 }
 
-//#endif
+#endif
