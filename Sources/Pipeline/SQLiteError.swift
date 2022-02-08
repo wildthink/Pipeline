@@ -23,7 +23,7 @@ public struct SQLiteError: Error {
 	/// - parameter code: An SQLite error code
 	/// - parameter details: A description of the error's cause
 	public init(code: Int32, details: String?) {
-		precondition(code != SQLITE_OK)
+		precondition(code & 0xff != SQLITE_OK)
 		precondition(code != SQLITE_ROW)
 		precondition(code != SQLITE_DONE)
 		self.code = code
