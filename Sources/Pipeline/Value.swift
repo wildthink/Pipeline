@@ -114,17 +114,32 @@ extension Database.Statement {
 	///
 	/// - throws: An error if `value` couldn't be bound.
 	public func bind(_ value: Database.Value, toParameter index: Int) throws {
+		precondition(index > 0)
 		switch value {
 		case .integer(let i):
-			try bind(i, toParameter: index)
+			guard sqlite3_bind_int64(preparedStatement, Int32(index), i) == SQLITE_OK else {
+				throw SQLiteError(fromPreparedStatement: preparedStatement)
+			}
 		case .float(let f):
-			try bind(f, toParameter: index)
+			guard sqlite3_bind_double(preparedStatement, Int32(index), f) == SQLITE_OK else {
+				throw SQLiteError(fromPreparedStatement: preparedStatement)
+			}
 		case .text(let s):
-			try bind(s, toParameter: index)
+			try s.withCString {
+				guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLiteTransientStorage) == SQLITE_OK else {
+					throw SQLiteError(fromPreparedStatement: preparedStatement)
+				}
+			}
 		case .blob(let b):
-			try bind(b, toParameter: index)
+			try b.withUnsafeBytes {
+				guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32(b.count), SQLiteTransientStorage) == SQLITE_OK else {
+					throw SQLiteError(fromPreparedStatement: preparedStatement)
+				}
+			}
 		case .null:
-			try bindNull(toParameter: index)
+			guard sqlite3_bind_null(preparedStatement, Int32(index)) == SQLITE_OK else {
+				throw SQLiteError(fromPreparedStatement: preparedStatement)
+			}
 		}
 	}
 
