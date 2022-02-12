@@ -449,4 +449,42 @@ extension Database.Row {
 		}
 		return try url(forColumn: index)
 	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value.
+	public func date(forColumn index: Int) throws -> Date {
+		let d = try double(forColumn: index)
+		return Date(timeIntervalSinceReferenceDate: d)
+	}
+
+	/// Returns the value of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	/// - note: Automatic type conversion may be performed by SQLite depending on the column's initial data type.
+	///
+	/// - precondition: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The column's value or `nil` if null.
+	public func dateOrNil(forColumn index: Int) throws -> Date? {
+		if try typeofColumn(index) == .null {
+			return nil
+		}
+		return try date(forColumn: index)
+	}
 }
