@@ -101,6 +101,44 @@ extension Database.Row {
 	}
 }
 
+extension Database.Statement {
+	/// Binds `value` to the SQL parameter at `index`.
+	///
+	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	///
+	/// - precondition: `index > 0`
+	/// - requires: `index < parameterCount`
+	///
+	/// - parameter value: The desired value of the SQL parameter.
+	/// - parameter index: The index of the SQL parameter to bind.
+	///
+	/// - throws: An error if `value` couldn't be bound.
+	public func bind(_ value: Database.Value, toParameter index: Int) throws {
+		switch value {
+		case .integer(let i):
+			try bind(i, toParameter: index)
+		case .float(let f):
+			try bind(f, toParameter: index)
+		case .text(let s):
+			try bind(s, toParameter: index)
+		case .blob(let b):
+			try bind(b, toParameter: index)
+		case .null:
+			try bindNull(toParameter: index)
+		}
+	}
+
+	/// Binds `value` to the SQL parameter `name`.
+	///
+	/// - parameter name: The name of the SQL parameter to bind.
+	/// - parameter value: The desired value of the SQL parameter.
+	///
+	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
+	public func bind(_ value: Database.Value, toParameter name: String) throws {
+		try bind(value, toParameter: indexOfParameter(named: name))
+	}
+}
+
 extension Database.Value: Equatable {
 	public static func == (lhs: Database.Value, rhs: Database.Value) -> Bool {
 		switch (lhs, rhs) {
