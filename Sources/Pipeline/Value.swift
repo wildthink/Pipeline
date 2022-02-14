@@ -98,14 +98,14 @@ extension Database.Row {
 			// but that behavior seems reasonable since type conversion was explicitly requested
 			return .text(String(cString: text))
 		case .blob:
-			guard let bytes = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
+			guard let blob = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
 				return .blob(Data())
 			}
 			let byteCount = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
-			let data = Data(bytes: bytes.assumingMemoryBound(to: UInt8.self), count: byteCount)
+			let data = Data(bytes: blob.assumingMemoryBound(to: UInt8.self), count: byteCount)
 			return .blob(data)
 		case .null:
 			return .null
