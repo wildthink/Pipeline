@@ -12,10 +12,10 @@ extension Database {
 	///
 	/// - seealso: [Datatypes In SQLite](https://sqlite.org/datatype3.html)
 	public enum Value {
-		/// An integer value.
+		/// A signed integer value.
 		case integer(Int64)
 		/// A floating-point value.
-		case float(Double)
+		case real(Double)
 		/// A text value.
 		case text(String)
 		/// A blob (untyped bytes) value.
@@ -51,11 +51,11 @@ extension Database.Row {
 			}
 			return .integer(i)
 		case SQLITE_FLOAT:
-			let f = sqlite3_column_double(statement.preparedStatement, Int32(index))
+			let r = sqlite3_column_double(statement.preparedStatement, Int32(index))
 			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
-			return .float(f)
+			return .real(r)
 		case SQLITE_TEXT:
 			let t = String(cString: sqlite3_column_text(statement.preparedStatement, Int32(index)))
 			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
@@ -63,14 +63,14 @@ extension Database.Row {
 			}
 			return .text(t)
 		case SQLITE_BLOB:
-			guard let blob = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
+			guard let b = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
 				return .blob(Data())
 			}
-			let byteCount = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
-			let data = Data(bytes: blob.assumingMemoryBound(to: UInt8.self), count: byteCount)
+			let count = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
+			let data = Data(bytes: b.assumingMemoryBound(to: UInt8.self), count: count)
 			return .blob(data)
 		case SQLITE_NULL:
 			return .null
@@ -100,14 +100,14 @@ extension Database.Row {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
 			return .integer(i)
-		case .float:
-			let f = sqlite3_column_double(statement.preparedStatement, Int32(index))
+		case .real:
+			let r = sqlite3_column_double(statement.preparedStatement, Int32(index))
 			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
-			return .float(f)
+			return .real(r)
 		case .text:
-			guard let text = sqlite3_column_text(statement.preparedStatement, Int32(index)) else {
+			guard let t = sqlite3_column_text(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
@@ -116,16 +116,16 @@ extension Database.Row {
 			}
 			// A String created using String(cString:) from a BLOB containing 0x00 will be shorter than expected
 			// but that behavior seems reasonable since type conversion was explicitly requested
-			return .text(String(cString: text))
+			return .text(String(cString: t))
 		case .blob:
-			guard let blob = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
+			guard let b = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
 				return .blob(Data())
 			}
-			let byteCount = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
-			let data = Data(bytes: blob.assumingMemoryBound(to: UInt8.self), count: byteCount)
+			let count = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
+			let data = Data(bytes: b.assumingMemoryBound(to: UInt8.self), count: count)
 			return .blob(data)
 		case .null:
 			return .null
@@ -181,27 +181,27 @@ extension Database.Statement {
 		switch value {
 		case .integer(let i):
 			guard sqlite3_bind_int64(preparedStatement, Int32(index), i) == SQLITE_OK else {
-				throw SQLiteError(fromPreparedStatement: preparedStatement)
+				throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 			}
-		case .float(let f):
-			guard sqlite3_bind_double(preparedStatement, Int32(index), f) == SQLITE_OK else {
-				throw SQLiteError(fromPreparedStatement: preparedStatement)
+		case .real(let r):
+			guard sqlite3_bind_double(preparedStatement, Int32(index), r) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 			}
-		case .text(let s):
-			try s.withCString {
+		case .text(let t):
+			try t.withCString {
 				guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLiteTransientStorage) == SQLITE_OK else {
-					throw SQLiteError(fromPreparedStatement: preparedStatement)
+					throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 				}
 			}
 		case .blob(let b):
 			try b.withUnsafeBytes {
 				guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32(b.count), SQLiteTransientStorage) == SQLITE_OK else {
-					throw SQLiteError(fromPreparedStatement: preparedStatement)
+					throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 				}
 			}
 		case .null:
 			guard sqlite3_bind_null(preparedStatement, Int32(index)) == SQLITE_OK else {
-				throw SQLiteError(fromPreparedStatement: preparedStatement)
+				throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 			}
 		}
 	}
@@ -222,8 +222,8 @@ extension Database.Value: Equatable {
 		switch (lhs, rhs) {
 		case (.integer(let i1), .integer(let i2)):
 			return i1 == i2
-		case (.float(let f1), .float(let f2)):
-			return f1 == f2
+		case (.real(let r1), .real(let r2)):
+			return r1 == r2
 		case (.text(let t1), .text(let t2)):
 			return t1 == t2
 		case (.blob(let b1), .blob(let b2)):
@@ -252,7 +252,7 @@ extension Database.Value: ExpressibleByIntegerLiteral {
 
 extension Database.Value: ExpressibleByFloatLiteral {
 	public init(floatLiteral value: FloatLiteralType) {
-		self = .float(value)
+		self = .real(value)
 	}
 }
 
@@ -274,8 +274,8 @@ extension Database.Value: CustomStringConvertible {
 		switch self {
 		case .integer(let i):
 			return ".integer(\(i))"
-		case .float(let f):
-			return ".float(\(f))"
+		case .real(let r):
+			return ".real(\(r))"
 		case .text(let t):
 			return ".text('\(t)')"
 		case .blob(let b):
