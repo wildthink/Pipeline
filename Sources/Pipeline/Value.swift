@@ -45,20 +45,32 @@ extension Database.Row {
 		}
 		switch type {
 		case SQLITE_INTEGER:
-			return .integer(sqlite3_column_int64(statement.preparedStatement, Int32(index)))
+			let i = sqlite3_column_int64(statement.preparedStatement, Int32(index))
+			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
+			}
+			return .integer(i)
 		case SQLITE_FLOAT:
-			return .float(sqlite3_column_double(statement.preparedStatement, Int32(index)))
+			let f = sqlite3_column_double(statement.preparedStatement, Int32(index))
+			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
+			}
+			return .float(f)
 		case SQLITE_TEXT:
-			return .text(String(cString: sqlite3_column_text(statement.preparedStatement, Int32(index))))
+			let t = String(cString: sqlite3_column_text(statement.preparedStatement, Int32(index)))
+			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
+			}
+			return .text(t)
 		case SQLITE_BLOB:
-			guard let bytes = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
+			guard let blob = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
 				return .blob(Data())
 			}
 			let byteCount = Int(sqlite3_column_bytes(statement.preparedStatement, Int32(index)))
-			let data = Data(bytes: bytes.assumingMemoryBound(to: UInt8.self), count: byteCount)
+			let data = Data(bytes: blob.assumingMemoryBound(to: UInt8.self), count: byteCount)
 			return .blob(data)
 		case SQLITE_NULL:
 			return .null
@@ -83,9 +95,17 @@ extension Database.Row {
 		}
 		switch type {
 		case .integer:
-			return .integer(sqlite3_column_int64(statement.preparedStatement, Int32(index)))
+			let i = sqlite3_column_int64(statement.preparedStatement, Int32(index))
+			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
+			}
+			return .integer(i)
 		case .float:
-			return .float(sqlite3_column_double(statement.preparedStatement, Int32(index)))
+			let f = sqlite3_column_double(statement.preparedStatement, Int32(index))
+			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
+			}
+			return .float(f)
 		case .text:
 			guard let text = sqlite3_column_text(statement.preparedStatement, Int32(index)) else {
 				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
