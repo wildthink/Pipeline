@@ -44,8 +44,7 @@ extension Database {
 		/// - throws: An error if `sql` could not be compiled.
 		public convenience init(database: Database, sql: String) throws {
 			var stmt: SQLitePreparedStatement?
-			let result = sqlite3_prepare_v2(database.databaseConnection, sql, -1, &stmt, nil)
-			guard result == SQLITE_OK else {
+			guard sqlite3_prepare_v2(database.databaseConnection, sql, -1, &stmt, nil) == SQLITE_OK else {
 				throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 			}
 			precondition(stmt != nil)
@@ -56,7 +55,7 @@ extension Database {
 		///
 		/// - seealso: [Read-only statements in SQLite](https://sqlite.org/c3ref/stmt_readonly.html)
 		public var isReadOnly: Bool {
-			return sqlite3_stmt_readonly(preparedStatement) != 0
+			sqlite3_stmt_readonly(preparedStatement) != 0
 		}
 
 		/// The number of columns in the result set.
@@ -82,20 +81,42 @@ extension Database {
 		///
 		/// - note: Column indexes are 0-based.  The leftmost column in a result row has index 0.
 		///
-		/// - precondition: `index >= 0`
-		/// - requires: `index < self.columnCount`
-		///
 		/// - parameter index: The index of the desired column.
 		///
 		/// - throws: An error if `index` is out of bounds.
 		///
-		/// - returns: The name of the column for the specified index
+		/// - returns: The name of the column for the specified index.
 		public func name(ofColumn index: Int) throws -> String {
-			precondition(index >= 0)
 			guard let name = sqlite3_column_name(preparedStatement, Int32(index)) else {
 				throw Database.Error(message: "Column index \(index) out of bounds")
 			}
 			return String(cString: name)
+		}
+
+		/// The mapping of column names to indexes
+		lazy var columnNamesAndIndexes: [String: Int] = {
+			let count = sqlite3_column_count(preparedStatement)
+			var map = [String: Int](minimumCapacity: Int(count))
+			for i in 0 ..< count {
+				if let s = sqlite3_column_name(preparedStatement, i) {
+					map[String(cString: s)] = Int(i)
+				}
+			}
+			return map
+		}()
+
+		/// Returns the index of the column `name`.
+		///
+		/// - parameter name: The name of the desired column.
+		///
+		/// - throws: An error if the column doesn't exist.
+		///
+		/// - returns: The index of the column with the specified name.
+		public func index(ofColumn name: String) throws -> Int {
+			guard let index = columnNamesAndIndexes[name] else {
+				throw Database.Error(message: "Unknown column \"\(name)\"")
+			}
+			return index
 		}
 	}
 }
@@ -126,7 +147,7 @@ extension Database.Statement {
 			result = sqlite3_step(preparedStatement)
 		}
 		guard result == SQLITE_DONE else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
+			throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 		}
 	}
 
@@ -143,7 +164,7 @@ extension Database.Statement {
 			result = sqlite3_step(preparedStatement)
 		}
 		guard result == SQLITE_DONE else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
+			throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 		}
 	}
 
@@ -159,7 +180,7 @@ extension Database.Statement {
 		case SQLITE_DONE:
 			return nil
 		default:
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
+			throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 		}
 	}
 
@@ -170,7 +191,7 @@ extension Database.Statement {
 	/// - throws: An error if the statement could not be reset.
 	public func reset() throws {
 		guard sqlite3_reset(preparedStatement) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
+			throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 		}
 	}
 }
@@ -178,9 +199,10 @@ extension Database.Statement {
 extension Database.Statement {
 	/// The original SQL text of the statement.
 	public var sql: String {
-		let str = sqlite3_sql(preparedStatement)
-		precondition(str != nil)
-		return String(cString: str.unsafelyUnwrapped)
+		guard let str = sqlite3_sql(preparedStatement) else {
+			return ""
+		}
+		return String(cString: str)
 	}
 
 #if SQLITE_ENABLE_NORMALIZE
@@ -206,528 +228,46 @@ extension Database.Statement {
 }
 
 extension Database.Statement {
-	/// The number of SQL parameters in this statement.
-	public var parameterCount: Int {
-		Int(sqlite3_bind_parameter_count(preparedStatement))
+	/// Available statement counters.
+	///
+	/// - seealso: [Status Parameters for prepared statements](https://www.sqlite.org/c3ref/c_stmtstatus_counter.html)
+	public enum	Counter {
+		/// The number of times that SQLite has stepped forward in a table as part of a full table scan
+		case fullscanStep
+		/// The number of sort operations that have occurred
+		case sort
+		/// The number of rows inserted into transient indices that were created automatically in order to help joins run faster
+		case autoindex
+		/// The number of virtual machine operations executed by the prepared statement
+		case vmStep
+		/// The number of times that the prepare statement has been automatically regenerated due to schema changes or change to bound parameters that might affect the query plan
+		case reprepare
+		/// The number of times that the prepared statement has been run
+		case run
+		/// The approximate number of bytes of heap memory used to store the prepared statement
+		case memused
 	}
 
-	/// Returns the name of the SQL parameter at `index`.
+	/// Returns information on a statement counter.
 	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+	/// - parameter counter: The desired statement counter
+	/// - parameter reset: If `true` the counter is reset to zero
 	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
+	/// - returns: The current value of the counter
 	///
-	/// - parameter index: The index of the desired SQL parameter.
-	///
-	/// - returns: The name of the specified parameter.
-	public func nameOfParameter(_ index: Int) -> String {
-		precondition(index > 0)
-		return String(cString: sqlite3_bind_parameter_name(preparedStatement, Int32(index)))
-	}
-
-	/// Returns the index of the SQL parameter with `name`.
-	///
-	/// - parameter name: The name of the desired SQL parameter.
-	///
-	/// - returns: The index of the specified parameter.
-	public func indexOfParameter(_ name: String) throws -> Int {
-		let index = sqlite3_bind_parameter_index(preparedStatement, name)
-		guard index != 0 else {
-			throw Database.Error(message: "SQL parameter \(name) not found")
+	/// - seealso: [Prepared Statement Status](https://www.sqlite.org/c3ref/stmt_status.html)
+	public func count(of counter: Counter, reset: Bool = false) -> Int {
+		let op: Int32
+		switch counter {
+		case .fullscanStep: 	op = SQLITE_STMTSTATUS_FULLSCAN_STEP
+		case .sort:				op = SQLITE_STMTSTATUS_SORT
+		case .autoindex:		op = SQLITE_STMTSTATUS_AUTOINDEX
+		case .vmStep:			op = SQLITE_STMTSTATUS_VM_STEP
+		case .reprepare:		op = SQLITE_STMTSTATUS_REPREPARE
+		case .run:				op = SQLITE_STMTSTATUS_RUN
+		case .memused:			op = SQLITE_STMTSTATUS_MEMUSED
 		}
-		return Int(index)
-	}
 
-	/// Clears all statement bindings by setting SQL parameters to null.
-	///
-	/// - throws: An error if the bindings could not be cleared.
-	public func clearBindings() throws {
-		guard sqlite3_clear_bindings(preparedStatement) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
+		return Int(sqlite3_stmt_status(preparedStatement, op, reset ? 1 : 0))
 	}
 }
-
-extension Database.Statement {
-	/// Binds database `NULL` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `NULL` couldn't be bound to the specified parameter.
-	public func bindNull(toParameter index: Int) throws {
-		precondition(index > 0)
-		guard sqlite3_bind_null(preparedStatement, Int32(index)) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Int64, toParameter index: Int) throws {
-		precondition(index > 0)
-		guard sqlite3_bind_int64(preparedStatement, Int32(index), value) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Double, toParameter index: Int) throws {
-		precondition(index > 0)
-		guard sqlite3_bind_double(preparedStatement, Int32(index), value) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: String, toParameter index: Int) throws {
-		precondition(index > 0)
-		try value.withCString {
-			guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLiteTransientStorage) == SQLITE_OK else {
-				throw SQLiteError(fromPreparedStatement: preparedStatement)
-			}
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Data, toParameter index: Int) throws {
-		precondition(index > 0)
-		try value.withUnsafeBytes {
-			guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32(value.count), SQLiteTransientStorage) == SQLITE_OK else {
-				throw SQLiteError(fromPreparedStatement: preparedStatement)
-			}
-		}
-	}
-}
-
-extension Database.Statement {
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Int64?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Double?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: String?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Data?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-}
-
-extension Database.Statement {
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Int, toParameter index: Int) throws {
-		try bind(Int64(value), toParameter: index)
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Int?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(Int64(value), toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: UInt, toParameter index: Int) throws {
-		try bind(Int64(value), toParameter: index)
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: UInt?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(Int64(value), toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Float, toParameter index: Int) throws {
-		try bind(Double(value), toParameter: index)
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: Float?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(Double(value), toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-}
-
-extension Database.Statement {
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: UUID, toParameter index: Int) throws {
-		try bind(value.uuidString.lowercased(), toParameter: index)
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: UUID?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-
-	/// Binds `value` to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: URL, toParameter index: Int) throws {
-		try bind(value.absoluteString, toParameter: index)
-	}
-
-	/// Binds `value` or null to the SQL parameter at `index`.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter value: The desired value of the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `value` couldn't be bound.
-	public func bind(_ value: URL?, toParameter index: Int) throws {
-		if let value = value {
-			try bind(value, toParameter: index)
-		} else {
-			try bindNull(toParameter: index)
-		}
-	}
-}
-
-//#if CSQLITE_CARRAY
-
-extension Database.Statement {
-	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter values: An array of values to bind to the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `values` couldn't be bound.
-	///
-	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Int32 {
-		precondition(index > 0)
-		let mem = UnsafeMutableBufferPointer<Int32>.allocate(capacity: values.count)
-		_ = mem.initialize(from: values)
-		guard sqlite3_carray_bind(preparedStatement, Int32(index), mem.baseAddress, Int32(values.count), CARRAY_INT32, { $0?.deallocate() }) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter values: An array of values to bind to the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `values` couldn't be bound.
-	///
-	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Int64 {
-		precondition(index > 0)
-		let mem = UnsafeMutableBufferPointer<Int64>.allocate(capacity: values.count)
-		_ = mem.initialize(from: values)
-		guard sqlite3_carray_bind(preparedStatement, Int32(index), mem.baseAddress, Int32(values.count), CARRAY_INT64, { $0?.deallocate() }) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter values: An array of values to bind to the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `values` couldn't be bound.
-	///
-	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == Double {
-		precondition(index > 0)
-		let mem = UnsafeMutableBufferPointer<Double>.allocate(capacity: values.count)
-		_ = mem.initialize(from: values)
-		guard sqlite3_carray_bind(preparedStatement, Int32(index), mem.baseAddress, Int32(values.count), CARRAY_DOUBLE, { $0?.deallocate() }) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-
-	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
-	///
-	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
-	///
-	/// - precondition: `index > 0`
-	/// - requires: `index < parameterCount`
-	///
-	/// - parameter values: An array of values to bind to the SQL parameter.
-	/// - parameter index: The index of the SQL parameter to bind.
-	///
-	/// - throws: An error if `values` couldn't be bound.
-	///
-	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public func bind<C: Collection>(_ values: C, toParameter index: Int) throws where C.Element == String {
-		precondition(index > 0)
-		let count = values.count
-
-		let utf8_character_counts = values.map { $0.utf8.count + 1 }
-		let utf8_offsets = [ 0 ] + scan(utf8_character_counts, 0, +)
-		let utf8_buf_size = utf8_offsets.last!
-
-		let ptr_size = MemoryLayout<UnsafePointer<Int8>>.stride * count
-		let alloc_size = ptr_size + utf8_buf_size
-
-		let mem = UnsafeMutableRawPointer.allocate(byteCount: alloc_size, alignment: MemoryLayout<UnsafePointer<Int8>>.alignment)
-
-		let ptrs = mem.bindMemory(to: UnsafeMutablePointer<Int8>.self, capacity: count)
-		let utf8 = (mem + ptr_size).bindMemory(to: Int8.self, capacity: utf8_buf_size)
-
-		for(i, s) in values.enumerated() {
-			let pos = utf8 + utf8_offsets[i]
-			ptrs[i] = pos
-			memcpy(pos, s, utf8_offsets[i + 1] - utf8_offsets[i])
-		}
-
-		guard sqlite3_carray_bind(preparedStatement, Int32(index), mem, Int32(values.count), CARRAY_TEXT, { $0?.deallocate() }) == SQLITE_OK else {
-			throw SQLiteError(fromPreparedStatement: preparedStatement)
-		}
-	}
-}
-
-/// Computes the accumulated result  of `seq`
-private func accumulate<S: Sequence, U>(_ seq: S, _ initial: U, _ combine: (U, S.Element) -> U) -> [U] {
-	var result: [U] = []
-	result.reserveCapacity(seq.underestimatedCount)
-	var runningResult = initial
-	for element in seq {
-		runningResult = combine(runningResult, element)
-		result.append(runningResult)
-	}
-	return result
-}
-
-/// Computes the prefix sum of `seq`.
-private func scan<S: Sequence, U>(_ seq: S, _ initial: U, _ combine: (U, S.Element) -> U) -> [U] {
-	var result: [U] = []
-	result.reserveCapacity(seq.underestimatedCount)
-	var runningResult = initial
-	for element in seq {
-		runningResult = combine(runningResult, element)
-		result.append(runningResult)
-	}
-	return result
-}
-
-//#endif
