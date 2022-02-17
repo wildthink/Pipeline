@@ -17,7 +17,7 @@ extension Database.Row {
 	/// - throws: An error if `index` is out of bounds.
 	///
 	/// - returns: The column's value.
-	public func value(forColumn index: Int) throws -> Database.Value {
+	public func value(ofColumn index: Int) throws -> Database.Value {
 		let type = sqlite3_column_type(statement.preparedStatement, Int32(index))
 		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
@@ -65,8 +65,8 @@ extension Database.Row {
 	/// - throws: An error if the column`name` doesn't exist.
 	///
 	/// - returns: The column's value.
-	public func value(forColumn name: String) throws -> Database.Value {
-		return try value(forColumn: statement.index(ofColumn: name))
+	public func value(ofColumn name: String) throws -> Database.Value {
+		return try value(ofColumn: statement.index(ofColumn: name))
 	}
 }
 
@@ -77,7 +77,7 @@ extension Database.Row {
 	public func values() throws -> [Database.Value] {
 		var values: [Database.Value] = []
 		for i in 0 ..< statement.columnCount {
-			values.append(try value(forColumn: i))
+			values.append(try value(ofColumn: i))
 		}
 		return values
 	}
@@ -88,7 +88,7 @@ extension Database.Row {
 	///
 	/// - returns: A dictionary of the row's values keyed by column name.
 	public func valueDictionary() throws -> [String: Database.Value] {
-		return try Dictionary(uniqueKeysWithValues: statement.columnNames.enumerated().map({ ($0.element, try value(forColumn: $0.offset)) }))
+		return try Dictionary(uniqueKeysWithValues: statement.columnNames.enumerated().map({ ($0.element, try value(ofColumn: $0.offset)) }))
 	}
 }
 
@@ -100,8 +100,8 @@ extension Database.Row {
 	/// - parameter index: The index of the desired column.
 	///
 	/// - returns: The column's value or `nil` if the column doesn't exist.
-	public subscript(forColumn index: Int) -> Database.Value? {
-		return try? value(forColumn: index)
+	public subscript(ofColumn index: Int) -> Database.Value? {
+		return try? value(ofColumn: index)
 	}
 
 	/// Returns the value of the column with `name`.
@@ -109,8 +109,8 @@ extension Database.Row {
 	/// - parameter name: The name of the desired column.
 	///
 	/// - returns: The column's value or `nil` if the column doesn't exist.
-	public subscript(forColumn name: String) -> Database.Value? {
-		return try? value(forColumn: name)
+	public subscript(ofColumn name: String) -> Database.Value? {
+		return try? value(ofColumn: name)
 	}
 }
 
@@ -125,7 +125,7 @@ extension Database.Row: Collection {
 
 	public subscript(position: Int) -> Database.Value {
 		do {
-			return try value(forColumn: position)
+			return try value(ofColumn: position)
 		} catch {
 			return .null
 		}

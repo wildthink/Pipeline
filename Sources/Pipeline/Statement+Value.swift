@@ -70,7 +70,7 @@ extension Database.Statement {
 	public func column(_ index: Int) throws -> [Database.Value] {
 		var values = [Database.Value]()
 		try results { row in
-			values.append(try row.value(forColumn: index))
+			values.append(try row.value(ofColumn: index))
 		}
 		return values
 	}
@@ -84,7 +84,7 @@ extension Database.Statement {
 		let index = try index(ofColumn: name)
 		var values = [Database.Value]()
 		try results { row in
-			values.append(try row.value(forColumn: index))
+			values.append(try row.value(ofColumn: index))
 		}
 		return values
 	}
@@ -103,7 +103,7 @@ extension Database.Statement {
 		var values = [[Database.Value]](repeating: [], count: indexes.count)
 		try results { row in
 			for (n, x) in indexes.enumerated() {
-				values[n].append(try row.value(forColumn: x))
+				values[n].append(try row.value(ofColumn: x))
 			}
 		}
 		return values
