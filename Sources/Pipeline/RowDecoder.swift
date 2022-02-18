@@ -129,10 +129,10 @@ extension RowDecoderGuts {
 	}
 
 	func decodeFloatingPoint<T>(_ value: Database.Value) throws -> T where T: BinaryFloatingPoint {
-		guard case let .float(f) = value else {
+		guard case let .real(r) = value else {
 			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 		}
-		return T(f)
+		return T(r)
 	}
 
 	private func decodeDate(_ value: Database.Value) throws -> Date {
@@ -141,16 +141,16 @@ extension RowDecoderGuts {
 			return try Date(from: self)
 
 		case .timeIntervalSince1970:
-			guard case let .float(f) = value else {
+			guard case let .real(r) = value else {
 				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 			}
-			return Date(timeIntervalSince1970: f)
+			return Date(timeIntervalSince1970: r)
 
 		case .timeIntervalSinceReferenceDate:
-			guard case let .float(f) = value else {
+			guard case let .real(r) = value else {
 				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 			}
-			return Date(timeIntervalSinceReferenceDate: f)
+			return Date(timeIntervalSinceReferenceDate: r)
 
 		case .iso8601:
 			guard case let .text(t) = value else {
