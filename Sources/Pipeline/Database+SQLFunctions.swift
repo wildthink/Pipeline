@@ -332,7 +332,7 @@ private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: Databas
 	switch value {
 	case .integer(let i):
 		sqlite3_result_int64(sqlite_context, i)
-	case .float(let f):
+	case .real(let f):
 		sqlite3_result_double(sqlite_context, f)
 	case .text(let t):
 		sqlite3_result_text(sqlite_context, t, -1, SQLiteTransientStorage)
@@ -360,7 +360,7 @@ extension Database.Value {
 		case SQLITE_INTEGER:
 			self = .integer(sqlite3_value_int64(value))
 		case SQLITE_FLOAT:
-			self = .float(sqlite3_value_double(value))
+			self = .real(sqlite3_value_double(value))
 		case SQLITE_TEXT:
 			self = .text(String(cString: sqlite3_value_text(value)))
 		case SQLITE_BLOB:
