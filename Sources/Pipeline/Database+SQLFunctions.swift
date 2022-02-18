@@ -332,8 +332,8 @@ private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: Databas
 	switch value {
 	case .integer(let i):
 		sqlite3_result_int64(sqlite_context, i)
-	case .real(let f):
-		sqlite3_result_double(sqlite_context, f)
+	case .real(let r):
+		sqlite3_result_double(sqlite_context, r)
 	case .text(let t):
 		sqlite3_result_text(sqlite_context, t, -1, SQLiteTransientStorage)
 	case .blob(let b):
