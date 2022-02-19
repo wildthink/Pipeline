@@ -226,3 +226,27 @@ extension Database.Statement {
 		return String(cString: str)
 	}
 }
+
+extension Database.Statement: Sequence {
+	/// Returns an iterator for accessing the result rows.
+	///
+	/// Because the iterator discards errors, the preferred way of accessing result rows
+	/// is via `nextRow()` or `results(_:)`.
+	///
+	/// - returns: An iterator over the result rows.
+	public func makeIterator() -> Database.Statement {
+		return self
+	}
+}
+
+extension Database.Statement: IteratorProtocol {
+	/// Returns the next result row or `nil` if none.
+	///
+	/// Because the iterator discards errors, the preferred way of accessing result rows
+	/// is via `nextRow()` or `results(_:)`.
+	///
+	/// - returns: The next result row of returned data.
+	public func next() -> Database.Row? {
+		return try? nextRow()
+	}
+}
