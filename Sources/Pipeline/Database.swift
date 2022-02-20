@@ -6,6 +6,7 @@
 
 import Foundation
 import CSQLite
+
 #if canImport(Combine)
 import Combine
 #endif
@@ -108,6 +109,7 @@ public final class Database {
 	}
 
 #if canImport(Combine)
+
 	/// The subject sending events from the update hook.
 	lazy var tableChangeEventSubject: PassthroughSubject<TableChangeEvent, Never> = {
 		let subject = PassthroughSubject<TableChangeEvent, Never>()
@@ -116,6 +118,7 @@ public final class Database {
 		}
 		return subject
 	}()
+
 #endif
 }
 

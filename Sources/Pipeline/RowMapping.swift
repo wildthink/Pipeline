@@ -1,11 +1,10 @@
 //
-// Copyright © 2021 Stephen F. Booth <me@sbooth.org>
+// Copyright © 2015 - 2022 Stephen F. Booth <me@sbooth.org>
 // Part of https://github.com/sbooth/Pipeline
 // MIT license
 //
 
 import Foundation
-import Combine
 
 /// A type that can be initialized from a result row.
 public protocol RowMapping {
@@ -16,6 +15,10 @@ public protocol RowMapping {
 	/// - throws: An error if initialization fails.
 	init(row: Row) throws
 }
+
+#if canImport(Combine)
+
+import Combine
 
 extension Publisher {
 	/// Returns a publisher mapping upstream result rows to elements of `type`.
@@ -30,3 +33,5 @@ extension Publisher {
 //			.eraseToAnyPublisher()
 	}
 }
+
+#endif

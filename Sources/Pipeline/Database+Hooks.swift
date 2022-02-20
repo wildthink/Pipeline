@@ -189,6 +189,7 @@ extension Database.RowChangeType {
 }
 
 #if canImport(Combine)
+
 import Combine
 
 extension Database {
@@ -203,6 +204,7 @@ extension Database {
 			.eraseToAnyPublisher()
 	}
 }
+
 #endif
 
 extension Database {
