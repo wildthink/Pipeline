@@ -4,6 +4,8 @@
 // MIT license
 //
 
+#if canImport(Combine)
+
 import Foundation
 import CSQLite
 import Combine
@@ -88,3 +90,5 @@ extension Publishers.RowPublisher {
 		}
 	}
 }
+
+#endif

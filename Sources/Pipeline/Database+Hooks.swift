@@ -1,5 +1,5 @@
 //
-// Copyright © 2021 Stephen F. Booth <me@sbooth.org>
+// Copyright © 2015 - 2022 Stephen F. Booth <me@sbooth.org>
 // Part of https://github.com/sbooth/Pipeline
 // MIT license
 //
@@ -110,6 +110,102 @@ extension Database {
 }
 
 extension Database {
+	/// Possible types of row changes.
+	public enum RowChangeType {
+		/// A row was inserted.
+		case insert
+		/// A row was deleted.
+		case delete
+		/// A row was updated.
+		case update
+	}
+
+	/// An insert, delete, or update event on a rowid table.
+	public struct TableChangeEvent {
+		/// The type of row change.
+		public let changeType: RowChangeType
+		/// The name of the database containing the table that changed.
+		public let database: String
+		/// The name of the table that changed.
+		public let table: String
+		/// The rowid of the row that changed.
+		public let rowid: Int64
+	}
+
+	/// A hook called when a row is inserted, deleted, or updated in a rowid table.
+	///
+	/// - parameter changeEvent: The table change event triggering the hook.
+	///
+	/// - seealso: [Commit And Rollback Notification Callbacks](https://www.sqlite.org/c3ref/commit_hook.html)
+	/// - seealso: [Rowid Tables](https://www.sqlite.org/rowidtable.html)
+	public typealias UpdateHook = (_ changeEvent: TableChangeEvent) -> Void
+
+	/// Sets the hook called when a row is inserted, deleted, or updated in a rowid table.
+	///
+	/// - parameter updateHook: A closure called when a row is inserted, deleted, or updated
+	public func setUpdateHook(_ block: @escaping UpdateHook) {
+		let context = UnsafeMutablePointer<UpdateHook>.allocate(capacity: 1)
+		context.initialize(to: block)
+		if let old = sqlite3_update_hook(databaseConnection, { context, op, database_name, table_name, rowid in
+			let function_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: UpdateHook.self)
+			let changeType = RowChangeType(op)
+			let database = String(utf8String: database_name.unsafelyUnwrapped).unsafelyUnwrapped
+			let table = String(utf8String: table_name.unsafelyUnwrapped).unsafelyUnwrapped
+			let changeEvent = TableChangeEvent(changeType: changeType, database: database, table: table, rowid: rowid)
+			function_ptr.pointee(changeEvent)
+		}, context) {
+			let oldContext = old.assumingMemoryBound(to: UpdateHook.self)
+			oldContext.deinitialize(count: 1)
+			oldContext.deallocate()
+		}
+	}
+
+	/// Removes the update hook.
+	public func removeUpdateHook() {
+		if let old = sqlite3_update_hook(databaseConnection, nil, nil) {
+			let oldContext = old.assumingMemoryBound(to: UpdateHook.self)
+			oldContext.deinitialize(count: 1)
+			oldContext.deallocate()
+		}
+	}
+}
+
+extension Database.RowChangeType {
+	/// Convenience initializer for conversion of `SQLITE_` values.
+	///
+	/// - parameter operation: The second argument to the callback function passed to `sqlite3_update_hook()`.
+	init(_ operation: Int32) {
+		switch operation {
+		case SQLITE_INSERT:
+			self = .insert
+		case SQLITE_DELETE:
+			self = .delete
+		case SQLITE_UPDATE:
+			self = .update
+		default:
+			fatalError("Unexpected SQLite row change type \(operation)")
+		}
+	}
+}
+
+#if canImport(Combine)
+import Combine
+
+extension Database {
+	/// Returns a publisher for changes to rowid tables.
+	///
+	/// - note: The publisher uses the database's update hook for event generation. If this
+	/// publisher is used the update hook is unavailable.
+	///
+	/// - returns: A publisher for changes to the database's rowid tables.
+	public var tableChangeEventPublisher: AnyPublisher<TableChangeEvent, Never> {
+		tableChangeEventSubject
+			.eraseToAnyPublisher()
+	}
+}
+#endif
+
+extension Database {
 	/// A hook that may be called when an attempt is made to access a locked database table.
 	///
 	/// - parameter attempts: The number of times the busy handler has been called for the same event.
@@ -137,7 +233,7 @@ extension Database {
 			busyHandler?.deinitialize(count: 1)
 			busyHandler?.deallocate()
 			busyHandler = nil
-			throw Database.Error(message: "Error setting busy handler")
+			throw DatabaseError(message: "Error setting busy handler")
 		}
 	}
 
@@ -169,7 +265,7 @@ extension Database {
 			busyHandler = nil
 		}
 		guard sqlite3_busy_timeout(databaseConnection, Int32(ms)) == SQLITE_OK else {
-			throw Database.Error(message: "Error setting busy timeout")
+			throw DatabaseError(message: "Error setting busy timeout")
 		}
 	}
 }

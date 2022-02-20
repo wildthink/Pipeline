@@ -1,12 +1,14 @@
 //
-// Copyright © 2021 Stephen F. Booth <me@sbooth.org>
+// Copyright © 2015 - 2022 Stephen F. Booth <me@sbooth.org>
 // Part of https://github.com/sbooth/Pipeline
 // MIT license
 //
 
 import Foundation
 import CSQLite
+#if canImport(Combine)
 import Combine
+#endif
 
 /// An `sqlite3 *` object.
 ///
@@ -30,21 +32,6 @@ public final class Database {
 
 	/// The database's custom busy handler
 	var busyHandler: UnsafeMutablePointer<BusyHandler>?
-
-	/// The subject sending events from `sqlite3_update_hook()`
-	private lazy var tableChangeEventSubject: PassthroughSubject<TableChangeEvent, Never> = {
-		let subject = PassthroughSubject<TableChangeEvent, Never>()
-		let ptr = Unmanaged.passUnretained(subject).toOpaque()
-		_ = sqlite3_update_hook(databaseConnection, { context, operation, database_name, table_name, rowid in
-			let subject = Unmanaged<PassthroughSubject<TableChangeEvent, Never>>.fromOpaque(context.unsafelyUnwrapped).takeUnretainedValue()
-			let changeType = RowChangeType(operation)
-			let database = String(utf8String: database_name.unsafelyUnwrapped).unsafelyUnwrapped
-			let table = String(utf8String: table_name.unsafelyUnwrapped).unsafelyUnwrapped
-			let event = TableChangeEvent(changeType: changeType, database: database, table: table, rowid: rowid)
-			subject.send(event)
-		}, Unmanaged.passUnretained(subject).toOpaque())
-		return subject
-	}()
 
 	/// Creates a database from an existing `sqlite3 *` database connection handle.
 	///
@@ -119,6 +106,17 @@ public final class Database {
 		precondition(db != nil)
 		self.init(databaseConnection: db.unsafelyUnwrapped)
 	}
+
+#if canImport(Combine)
+	/// The subject sending events from the update hook.
+	lazy var tableChangeEventSubject: PassthroughSubject<TableChangeEvent, Never> = {
+		let subject = PassthroughSubject<TableChangeEvent, Never>()
+		setUpdateHook {
+			subject.send($0)
+		}
+		return subject
+	}()
+#endif
 }
 
 extension Database {
@@ -138,15 +136,13 @@ extension Database {
 	}
 
 	/// The number of rows modified, inserted, or deleted by the most recently completed `INSERT`, `UPDATE` or `DELETE` statement.
-	public var changes: Int {
-		// TODO: Update to sqlite3_changes64
-		Int(sqlite3_changes(databaseConnection))
+	public var changes: Int64 {
+		sqlite3_changes64(databaseConnection)
 	}
 
 	/// The total number of rows inserted, modified, or deleted by all `INSERT`, `UPDATE` or `DELETE` statements.
-	public var totalChanges: Int {
-		// TODO: Update to sqlite3_total_changes64
-		Int(sqlite3_total_changes(databaseConnection))
+	public var totalChanges: Int64 {
+		sqlite3_total_changes64(databaseConnection)
 	}
 
 	/// Interrupts a long-running query.
@@ -165,14 +161,14 @@ extension Database {
 	/// - returns: The URL for the file associated with database `name`
 	public func url(forDatabase name: String = "main") throws -> URL {
 		guard let path = sqlite3_db_filename(databaseConnection, name) else {
-			throw Database.Error(message: "The database \"\(name)\" does not exist or is a temporary or in-memory database")
+			throw DatabaseError(message: "The database \"\(name)\" does not exist or is a temporary or in-memory database")
 		}
 		return URL(fileURLWithPath: String(cString: path))
 	}
 
 	/// Performs a low-level SQLite database operation.
 	///
-	/// **Use of this function should be avoided whenever possible**
+	/// - attention: **Use of this function should be avoided whenever possible.**
 	///
 	/// - parameter block: A closure performing the database operation.
 	/// - parameter databaseConnection: The raw `sqlite3 *` database connection handle.
@@ -180,7 +176,7 @@ extension Database {
 	/// - throws: Any error thrown in `block`.
 	///
 	/// - returns: The value returned by `block`.
-	public func withUnsafeRawSQLiteDatabaseConnection<T>(block: (_ databaseConnection: SQLiteDatabaseConnection) throws -> (T)) rethrows -> T {
+	public func withUnsafeSQLiteDatabaseConnection<T>(block: (_ databaseConnection: SQLiteDatabaseConnection) throws -> (T)) rethrows -> T {
 		try block(databaseConnection)
 	}
 }
@@ -208,12 +204,59 @@ extension Database {
 	public func prepare(sql: String) throws -> Statement {
 		try Statement(database: self, sql: sql)
 	}
+
+	/// Executes one or more SQL statements and optionally applies `block` to each result row.
+	///
+	/// Multiple SQL statements are separated with a semicolon (`;`)
+	///
+	/// - parameter sql: The SQL statement or statements to execute
+	/// - parameter block: An optional closure applied to each result row
+	/// - parameter row: A dictionary of returned data keyed by column name
+	///
+	/// - throws: An error if `sql` could not be compiled or executed
+	public func batch(sql: String, _ block: ((_ row: [String: String]) -> Void)? = nil) throws {
+		var result: Int32
+		var errmsg: UnsafeMutablePointer<Int8>?
+		if let block = block {
+			let context_ptr = UnsafeMutablePointer<((_ row: [String: String]) -> Void)?>.allocate(capacity: 1)
+			context_ptr.initialize(to: block)
+			defer {
+				context_ptr.deinitialize(count: 1)
+				context_ptr.deallocate()
+			}
+
+			result = sqlite3_exec(databaseConnection, sql, { (context, count, raw_values, raw_names) -> Int32 in
+				let values = UnsafeMutableBufferPointer<UnsafeMutablePointer<Int8>?>(start: raw_values, count: Int(count))
+				let names = UnsafeMutableBufferPointer<UnsafeMutablePointer<Int8>?>(start: raw_names, count: Int(count))
+
+				var row = [String: String]()
+				for i in 0 ..< Int(count) {
+					let raw_value = values[i].unsafelyUnwrapped
+					let value = String(bytesNoCopy: raw_value, length: strlen(raw_value), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
+					let raw_name = names[i].unsafelyUnwrapped
+					let name = String(bytesNoCopy: raw_name, length: strlen(raw_name), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
+					row[name] = value
+				}
+
+				let context_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: (([String: String]) -> Void).self)
+				context_ptr.pointee(row)
+
+				return SQLITE_OK
+			}, context_ptr, &errmsg)
+		} else {
+			result = sqlite3_exec(databaseConnection, sql, nil, nil, &errmsg)
+		}
+		guard result == SQLITE_OK else {
+			let details = errmsg != nil ? String(bytesNoCopy: errmsg.unsafelyUnwrapped, length: strlen(errmsg.unsafelyUnwrapped), encoding: .utf8, freeWhenDone: true).unsafelyUnwrapped : nil
+			throw DatabaseError(message: "Error executing SQL", details: details)
+		}
+	}	
 }
 
 extension Database {
 	/// Returns the result or error code associated with the most recent `sqlite3_` API call
 	public var errorCode: Int32 {
-		sqlite3_errcode(databaseConnection)
+		sqlite3_errcode(databaseConnection) & 0xff
 	}
 
 	/// Returns the result or extended error code associated with the most recent `sqlite3_` API call
@@ -232,55 +275,5 @@ extension Database {
 	public var success: Bool {
 		let result = errorCode
 		return result == SQLITE_OK || result == SQLITE_ROW || result == SQLITE_DONE
-	}
-}
-
-extension Database {
-	/// Possible types of row changes.
-	public enum	RowChangeType {
-		/// A row was inserted.
-		case insert
-		/// A row was deleted.
-		case delete
-		/// A row was updated.
-		case update
-	}
-
-	/// An insert, delete, or update event on a rowid table.
-	public struct TableChangeEvent {
-		/// The type of row change.
-		public let changeType: RowChangeType
-		/// The name of the database containing the table that changed.
-		public let database: String
-		/// The name of the table that changed.
-		public let table: String
-		/// The rowid of the row that changed.
-		public let rowid: Int64
-	}
-
-	/// Returns a publisher for changes to rowid tables.
-	///
-	/// - returns: A publisher for changes to the database's rowid tables.
-	public var tableChangeEventPublisher: AnyPublisher<TableChangeEvent, Never> {
-		tableChangeEventSubject
-			.eraseToAnyPublisher()
-	}
-}
-
-extension Database.RowChangeType {
-	/// Convenience initializer for conversion of `SQLITE_` values.
-	///
-	/// - parameter operation: The second argument to the callback function passed to `sqlite3_update_hook()`.
-	init(_ operation: Int32) {
-		switch operation {
-		case SQLITE_INSERT:
-			self = .insert
-		case SQLITE_DELETE:
-			self = .delete
-		case SQLITE_UPDATE:
-			self = .update
-		default:
-			fatalError("Unexpected SQLite row change type \(operation)")
-		}
 	}
 }
