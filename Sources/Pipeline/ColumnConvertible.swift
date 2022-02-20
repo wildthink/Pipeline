@@ -48,7 +48,7 @@ extension Row {
 	/// - throws: An error if `index` is out of bounds or the column contains an illegal value.
 	///
 	/// - returns: The column's value or `nil` if null
-	public func value<T: ColumnConvertible>(ofColumn index: Int) throws -> T? {
+	public func value<T: ColumnConvertible>(forColumn index: Int) throws -> T? {
 		if try type(ofColumn: index) == .null {
 			return nil
 		}
@@ -64,8 +64,8 @@ extension Row {
 	/// - throws: An error if `index` is out of bounds or the column contains a null or illegal value.
 	///
 	/// - returns: The column's value.
-	public func value<T: ColumnConvertible>(ofColumn index: Int) throws -> T {
-		guard let value: T = try value(ofColumn: index) else {
+	public func value<T: ColumnConvertible>(forColumn index: Int) throws -> T {
+		guard let value: T = try value(forColumn: index) else {
 			throw Database.Error(message: "SQL NULL encountered for column \(index)")
 		}
 		return value
@@ -78,8 +78,8 @@ extension Row {
 	/// - throws: An error if the column doesn't exist or contains an illegal value.
 	///
 	/// - returns: The column's value or `nil` if null.
-	public func value<T: ColumnConvertible>(ofColumn name: String) throws -> T? {
-		return try value(ofColumn: statement.index(ofColumn: name))
+	public func value<T: ColumnConvertible>(forColumn name: String) throws -> T? {
+		return try value(forColumn: statement.index(ofColumn: name))
 	}
 
 	/// Returns the value of the column with name `name`.
@@ -89,8 +89,8 @@ extension Row {
 	/// - throws: An error if the column doesn't exist or contains a null or illegal value.
 	///
 	/// - returns: The column's value.
-	public func value<T: ColumnConvertible>(ofColumn name: String) throws -> T {
-		return try value(ofColumn: statement.index(ofColumn: name))
+	public func value<T: ColumnConvertible>(forColumn name: String) throws -> T {
+		return try value(forColumn: statement.index(ofColumn: name))
 	}
 }
 
