@@ -87,7 +87,7 @@ extension Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func type(ofColumn index: Int) throws -> Database.FundamentalType {
 		let type = sqlite3_column_type(statement.preparedStatement, Int32(index))
-		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 		}
 		switch type {
@@ -119,31 +119,31 @@ extension Row {
 	/// - returns: The column's value.
 	public func value(ofColumn index: Int) throws -> Database.Value {
 		let type = sqlite3_column_type(statement.preparedStatement, Int32(index))
-		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 		}
 		switch type {
 		case SQLITE_INTEGER:
 			let i = sqlite3_column_int64(statement.preparedStatement, Int32(index))
-			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+			guard statement.database.success else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
 			return .integer(i)
 		case SQLITE_FLOAT:
 			let r = sqlite3_column_double(statement.preparedStatement, Int32(index))
-			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+			guard statement.database.success else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
 			return .real(r)
 		case SQLITE_TEXT:
 			let t = String(cString: sqlite3_column_text(statement.preparedStatement, Int32(index)))
-			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+			guard statement.database.success else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
 			return .text(t)
 		case SQLITE_BLOB:
 			guard let b = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
-				guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+				guard statement.database.success else {
 					throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 				}
 				return .blob(Data())
@@ -251,7 +251,7 @@ extension Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func integer(forColumn index: Int) throws -> Int64 {
 		let i = sqlite3_column_int64(statement.preparedStatement, Int32(index))
-		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 		}
 		return i
@@ -271,7 +271,7 @@ extension Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func real(forColumn index: Int) throws -> Double {
 		let r = sqlite3_column_double(statement.preparedStatement, Int32(index))
-		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 		}
 		return r
@@ -291,7 +291,7 @@ extension Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func text(forColumn index: Int) throws -> String {
 		let t = String(cString: sqlite3_column_text(statement.preparedStatement, Int32(index)))
-		guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 		}
 		return t
@@ -311,7 +311,7 @@ extension Row {
 	/// - seealso: [Result values from a query](https://sqlite.org/c3ref/column_blob.html)
 	public func blob(forColumn index: Int) throws -> Data {
 		guard let b = sqlite3_column_blob(statement.preparedStatement, Int32(index)) else {
-			guard sqlite3_errcode(statement.database.databaseConnection) == SQLITE_OK else {
+			guard statement.database.success else {
 				throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
 			}
 			return Data()
