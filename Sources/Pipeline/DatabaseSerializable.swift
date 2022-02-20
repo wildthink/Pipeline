@@ -196,3 +196,21 @@ extension NSNull: DatabaseSerializable {
 		}
 	}
 }
+
+extension DatabaseSerializable where Self: NSObject, Self: NSCoding {
+	public func serialized() throws -> DatabaseValue {
+		return .blob(try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true))
+	}
+
+	public static func deserialize(from value: DatabaseValue) throws -> Self {
+		switch value {
+		case .blob(let b):
+			guard let result = try NSKeyedUnarchiver.unarchivedObject(ofClass: Self.self, from: b) else {
+				throw DatabaseError(message: "\(b) is not a valid instance of \(Self.self)")
+			}
+			return result
+		default:
+			throw DatabaseError(message: "\(value) is not a blob")
+		}
+	}
+}
