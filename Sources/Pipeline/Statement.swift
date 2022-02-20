@@ -303,7 +303,7 @@ extension Statement {
 	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
-	public func column(_ index: Int) throws -> [Database.Value] {
+	public func values(ofColumn index: Int) throws -> [Database.Value] {
 		var values = [Database.Value]()
 		try results { row in
 			values.append(try row.value(ofColumn: index))
@@ -316,7 +316,7 @@ extension Statement {
 	/// - parameter name: The name of the desired column.
 	///
 	/// - throws: An error if the column `name` doesn't exist.
-	public func column(_ name: String) throws -> [Database.Value] {
+	public func values(ofColumn name: String) throws -> [Database.Value] {
 		let index = try index(ofColumn: name)
 		var values = [Database.Value]()
 		try results { row in
@@ -335,12 +335,23 @@ extension Statement {
 	/// - parameter indexes: The indexes of the desired columns.
 	///
 	/// - throws: An error if any element of `indexes` is out of bounds.
-	public func columns<S: Collection>(_ indexes: S) throws -> [[Database.Value]] where S.Element == Int {
+	public func values<S: Collection>(ofColumns indexes: S) throws -> [[Database.Value]] where S.Element == Int {
 		var values = [[Database.Value]](repeating: [], count: indexes.count)
-		try results { row in
-			for (n, x) in indexes.enumerated() {
-				values[n].append(try row.value(ofColumn: x))
-			}
+		for (n, x) in indexes.enumerated() {
+			values[n] = try self.values(ofColumn: x)
+		}
+		return values
+	}
+
+	/// Returns the values of the columns with `names` for each row in the result set.
+	///
+	/// - parameter names: The names of the desired columns.
+	///
+	/// - throws: An error if a column in `names` doesn't exist.
+	public func values<S: Collection>(ofColumns names: S) throws -> [String: [Database.Value]] where S.Element == String {
+		var values: [String: [Database.Value]] = [:]
+		for name in names {
+			values[name] = try self.values(ofColumn: name)
 		}
 		return values
 	}
