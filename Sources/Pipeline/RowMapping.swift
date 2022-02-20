@@ -14,15 +14,15 @@ public protocol RowMapping {
 	/// - parameter row: A `Row` object.
 	///
 	/// - throws: An error if initialization fails.
-	init(row: Database.Row) throws
+	init(row: Row) throws
 }
 
 extension Publisher {
 	/// Returns a publisher mapping upstream result rows to elements of `type`.
 	///
 	/// - parameter type: The type of item to create from the row.
-	public func mapRows<T>(type: T.Type) -> Publishers.TryMap<Self, T> where Output == Database.Row, T: RowMapping {
-//	public func mapRows<T>(type: T.Type) -> AnyPublisher<RowMapping, Error> where Output == Database.Row, T: RowMapping {
+	public func mapRows<T>(type: T.Type) -> Publishers.TryMap<Self, T> where Output == Row, T: RowMapping {
+//	public func mapRows<T>(type: T.Type) -> AnyPublisher<RowMapping, Error> where Output == Row, T: RowMapping {
 		return self
 			.tryMap {
 				try T(row: $0)
