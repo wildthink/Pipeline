@@ -12,116 +12,157 @@ import CSQLite
 /// - seealso: [SQLite Prepared Statement Object](https://sqlite.org/c3ref/stmt.html)
 public typealias SQLitePreparedStatement = OpaquePointer
 
-extension Database {
-	/// A compiled SQL statement with support for SQL parameter binding.
-	public final class Statement {
-		/// The owning database
-		public let database: Database
-		/// The underlying `sqlite3_stmt *` object
-		let preparedStatement: SQLitePreparedStatement
+/// A compiled SQL statement with support for SQL parameter binding and result row processing.
+///
+/// **Creation**
+///
+/// A statement is not created directly but is obtained from a `Database`.
+///
+/// ```swift
+/// let statement = try database.prepare(sql: "select count(*) from t1;")
+/// ```
+///
+/// **Parameter Binding**
+///
+/// A statement supports binding values to SQL parameters by index or by name.
+///
+/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
+///
+/// ```swift
+/// let statement = try database.prepare(sql: "insert into t1(a, b, c, d, e, f) values (?, ?, ?, :d, :e, :f);")
+/// try statement.bind(integer: 30, toParameter: 3)
+/// try statement.bind(integer: 40, toParameter: ":d")
+/// try statement.bind(parameterValues: 10, 20)
+/// try statement.bind(parameters: [":f": 60, ":e": 50])
+/// ```
+///
+/// **Result Rows**
+///
+/// When executed a statement provides zero or more result rows.
+///
+/// ```swift
+/// try statement.results { row in
+///     // Do something with `row`
+/// }
+/// ```
+///
+/// ```swift
+/// for row in statement {
+///     // Do something with `row`
+/// }
+/// ```
+///
+/// It is generally preferred to use the block-based method because any errors may be explicitly handled instead of
+/// silently discarded.
+public final class Statement {
+	/// The owning database
+	public let database: Database
+	/// The underlying `sqlite3_stmt *` object
+	let preparedStatement: SQLitePreparedStatement
 
-		/// Creates a compiled SQL statement.
-		///
-		/// - parameter database: The owning database.
-		/// - parameter preparedStatement: An `sqlite3_stmt *` prepared statement object..
-		///
-		/// - throws: An error if `sql` could not be compiled
-		public init(database: Database, preparedStatement: SQLitePreparedStatement) {
-			precondition(sqlite3_db_handle(preparedStatement) == database.databaseConnection)
-			self.database = database
-			self.preparedStatement = preparedStatement
+	/// Creates a compiled SQL statement.
+	///
+	/// - attention: The statement takes ownership of `preparedStatement`.  The result of further use of `preparedStatement` is undefined.
+	///
+	/// - parameter database: The owning database.
+	/// - parameter preparedStatement: An `sqlite3_stmt *` prepared statement object..
+	///
+	/// - throws: An error if `sql` could not be compiled
+	public init(database: Database, preparedStatement: SQLitePreparedStatement) {
+		precondition(sqlite3_db_handle(preparedStatement) == database.databaseConnection)
+		self.database = database
+		self.preparedStatement = preparedStatement
+	}
+
+	deinit {
+		_ = sqlite3_finalize(preparedStatement)
+	}
+
+	/// Creates a compiled SQL statement.
+	///
+	/// - parameter database: The owning database.
+	/// - parameter sql: The SQL statement to compile.
+	///
+	/// - throws: An error if `sql` could not be compiled.
+	public convenience init(database: Database, sql: String) throws {
+		var stmt: SQLitePreparedStatement?
+		guard sqlite3_prepare_v2(database.databaseConnection, sql, -1, &stmt, nil) == SQLITE_OK else {
+			throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
 		}
+		precondition(stmt != nil)
+		self.init(database: database, preparedStatement: stmt.unsafelyUnwrapped)
+	}
 
-		deinit {
-			_ = sqlite3_finalize(preparedStatement)
-		}
+	/// `true` if this statement makes no direct changes to the database, `false` otherwise.
+	///
+	/// - seealso: [Read-only statements in SQLite](https://sqlite.org/c3ref/stmt_readonly.html)
+	public var isReadOnly: Bool {
+		sqlite3_stmt_readonly(preparedStatement) != 0
+	}
 
-		/// Creates a compiled SQL statement.
-		///
-		/// - parameter database: The owning database.
-		/// - parameter sql: The SQL statement to compile.
-		///
-		/// - throws: An error if `sql` could not be compiled.
-		public convenience init(database: Database, sql: String) throws {
-			var stmt: SQLitePreparedStatement?
-			guard sqlite3_prepare_v2(database.databaseConnection, sql, -1, &stmt, nil) == SQLITE_OK else {
-				throw SQLiteError(fromDatabaseConnection: database.databaseConnection)
+	/// The number of columns in the result set.
+	public var columnCount: Int {
+		Int(sqlite3_column_count(preparedStatement))
+	}
+
+	/// The names of the columns.
+	///
+	/// - note: Column names are not guaranteed to be unique.
+	public lazy var columnNames: [String] = {
+		let count = sqlite3_column_count(preparedStatement)
+		var names: [String] = []
+		for i in 0 ..< count {
+			if let s = sqlite3_column_name(preparedStatement, i) {
+				names.append(String(cString: s))
 			}
-			precondition(stmt != nil)
-			self.init(database: database, preparedStatement: stmt.unsafelyUnwrapped)
 		}
+		return names
+	}()
 
-		/// `true` if this statement makes no direct changes to the database, `false` otherwise.
-		///
-		/// - seealso: [Read-only statements in SQLite](https://sqlite.org/c3ref/stmt_readonly.html)
-		public var isReadOnly: Bool {
-			sqlite3_stmt_readonly(preparedStatement) != 0
+	/// Returns the name of the column at `index`.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a result row has index 0.
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	///
+	/// - returns: The name of the column for the specified index.
+	public func name(ofColumn index: Int) throws -> String {
+		guard let name = sqlite3_column_name(preparedStatement, Int32(index)) else {
+			throw Database.Error(message: "Column index \(index) out of bounds")
 		}
+		return String(cString: name)
+	}
 
-		/// The number of columns in the result set.
-		public var columnCount: Int {
-			Int(sqlite3_column_count(preparedStatement))
-		}
-
-		/// The names of the columns.
-		///
-		/// - note: Column names are not guaranteed to be unique.
-		public lazy var columnNames: [String] = {
-			let count = sqlite3_column_count(preparedStatement)
-			var names: [String] = []
-			for i in 0 ..< count {
-				if let s = sqlite3_column_name(preparedStatement, i) {
-					names.append(String(cString: s))
-				}
+	/// The mapping of column names to indexes
+	lazy var columnNamesAndIndexes: [String: Int] = {
+		let count = sqlite3_column_count(preparedStatement)
+		var map = [String: Int](minimumCapacity: Int(count))
+		for i in 0 ..< count {
+			if let s = sqlite3_column_name(preparedStatement, i) {
+				map[String(cString: s)] = Int(i)
 			}
-			return names
-		}()
-
-		/// Returns the name of the column at `index`.
-		///
-		/// - note: Column indexes are 0-based.  The leftmost column in a result row has index 0.
-		///
-		/// - parameter index: The index of the desired column.
-		///
-		/// - throws: An error if `index` is out of bounds.
-		///
-		/// - returns: The name of the column for the specified index.
-		public func name(ofColumn index: Int) throws -> String {
-			guard let name = sqlite3_column_name(preparedStatement, Int32(index)) else {
-				throw Database.Error(message: "Column index \(index) out of bounds")
-			}
-			return String(cString: name)
 		}
+		return map
+	}()
 
-		/// The mapping of column names to indexes
-		lazy var columnNamesAndIndexes: [String: Int] = {
-			let count = sqlite3_column_count(preparedStatement)
-			var map = [String: Int](minimumCapacity: Int(count))
-			for i in 0 ..< count {
-				if let s = sqlite3_column_name(preparedStatement, i) {
-					map[String(cString: s)] = Int(i)
-				}
-			}
-			return map
-		}()
-
-		/// Returns the index of the column `name`.
-		///
-		/// - parameter name: The name of the desired column.
-		///
-		/// - throws: An error if the column doesn't exist.
-		///
-		/// - returns: The index of the column with the specified name.
-		public func index(ofColumn name: String) throws -> Int {
-			guard let index = columnNamesAndIndexes[name] else {
-				throw Database.Error(message: "Unknown column \"\(name)\"")
-			}
-			return index
+	/// Returns the index of the column `name`.
+	///
+	/// - parameter name: The name of the desired column.
+	///
+	/// - throws: An error if the column doesn't exist.
+	///
+	/// - returns: The index of the column with the specified name.
+	public func index(ofColumn name: String) throws -> Int {
+		guard let index = columnNamesAndIndexes[name] else {
+			throw Database.Error(message: "Unknown column \"\(name)\"")
 		}
+		return index
 	}
 }
 
-extension Database.Statement {
+extension Statement {
 	/// Performs a low-level SQLite statement operation.
 	///
 	/// - attention: **Use of this function should be avoided whenever possible.**
@@ -137,7 +178,7 @@ extension Database.Statement {
 	}
 }
 
-extension Database.Statement {
+extension Statement {
 	/// Executes the statement and discards any result rows.
 	///
 	/// - throws: An error if the statement could not be executed.
@@ -157,10 +198,10 @@ extension Database.Statement {
 	/// - parameter row: A result row of returned data.
 	///
 	/// - throws: Any error thrown in `block` or an error if the statement did not successfully run to completion
-	public func results(_ block: ((_ row: Database.Row) throws -> ())) throws {
+	public func results(_ block: ((_ row: Row) throws -> ())) throws {
 		var result = sqlite3_step(preparedStatement)
 		while result == SQLITE_ROW {
-			try block(Database.Row(statement: self))
+			try block(Row(statement: self))
 			result = sqlite3_step(preparedStatement)
 		}
 		guard result == SQLITE_DONE else {
@@ -173,10 +214,10 @@ extension Database.Statement {
 	/// - returns: The next result row of returned data.
 	///
 	/// - throws: An error if the statement encountered an execution error.
-	public func nextRow() throws -> Database.Row? {
+	public func nextRow() throws -> Row? {
 		switch sqlite3_step(preparedStatement) {
 		case SQLITE_ROW:
-			return Database.Row(statement: self)
+			return Row(statement: self)
 		case SQLITE_DONE:
 			return nil
 		default:
@@ -196,7 +237,7 @@ extension Database.Statement {
 	}
 }
 
-extension Database.Statement {
+extension Statement {
 	/// The original SQL text of the statement.
 	public var sql: String {
 		guard let str = sqlite3_sql(preparedStatement) else {
@@ -227,26 +268,80 @@ extension Database.Statement {
 	}
 }
 
-extension Database.Statement: Sequence {
+extension Statement: Sequence {
 	/// Returns an iterator for accessing the result rows.
 	///
 	/// Because the iterator discards errors, the preferred way of accessing result rows
 	/// is via `nextRow()` or `results(_:)`.
 	///
 	/// - returns: An iterator over the result rows.
-	public func makeIterator() -> Database.Statement {
+	public func makeIterator() -> Statement {
 		return self
 	}
 }
 
-extension Database.Statement: IteratorProtocol {
+extension Statement: IteratorProtocol {
 	/// Returns the next result row or `nil` if none.
 	///
 	/// Because the iterator discards errors, the preferred way of accessing result rows
 	/// is via `nextRow()` or `results(_:)`.
 	///
 	/// - returns: The next result row of returned data.
-	public func next() -> Database.Row? {
+	public func next() -> Row? {
 		return try? nextRow()
+	}
+}
+
+extension Statement {
+	/// Returns the value of the column at `index` for each row in the result set.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	///
+	/// - requires: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	public func column(_ index: Int) throws -> [Database.Value] {
+		var values = [Database.Value]()
+		try results { row in
+			values.append(try row.value(ofColumn: index))
+		}
+		return values
+	}
+
+	/// Returns the value of the column with `name` for each row in the result set.
+	///
+	/// - parameter name: The name of the desired column.
+	///
+	/// - throws: An error if the column `name` doesn't exist.
+	public func column(_ name: String) throws -> [Database.Value] {
+		let index = try index(ofColumn: name)
+		var values = [Database.Value]()
+		try results { row in
+			values.append(try row.value(ofColumn: index))
+		}
+		return values
+	}
+
+	/// Returns the values of the columns at `indexes` for each row in the result set.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	///
+	/// - requires: `indexes.min() >= 0`
+	/// - requires: `indexes.max() < self.columnCount`
+	///
+	/// - parameter indexes: The indexes of the desired columns.
+	///
+	/// - throws: An error if any element of `indexes` is out of bounds.
+	public func columns<S: Collection>(_ indexes: S) throws -> [[Database.Value]] where S.Element == Int {
+		var values = [[Database.Value]](repeating: [], count: indexes.count)
+		try results { row in
+			for (n, x) in indexes.enumerated() {
+				values[n].append(try row.value(ofColumn: x))
+			}
+		}
+		return values
 	}
 }

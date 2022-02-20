@@ -9,7 +9,7 @@ import CSQLite
 
 //#if CSQLITE_CARRAY
 
-extension Database.Statement {
+extension Statement {
 	/// Binds `values` to the SQL parameter at `index` using the sqlite3 carray extension.
 	///
 	/// - note: Parameter indexes are 1-based.  The leftmost parameter in a statement has index 1.
@@ -101,7 +101,7 @@ extension Database.Statement {
 	}
 }
 
-extension Database.Statement {
+extension Statement {
 	/// Binds `values` to the SQL parameter `name` using the sqlite3 carray extension.
 	///
 	/// - parameter name: The name of the SQL parameter to bind.

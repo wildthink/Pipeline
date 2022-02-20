@@ -7,7 +7,7 @@
 import Foundation
 import CSQLite
 
-extension Database.Statement {
+extension Statement {
 	/// Available statement counters.
 	///
 	/// - seealso: [Status Parameters for prepared statements](https://www.sqlite.org/c3ref/c_stmtstatus_counter.html)

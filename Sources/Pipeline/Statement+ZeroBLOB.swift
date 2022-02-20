@@ -7,7 +7,7 @@
 import Foundation
 import CSQLite
 
-extension Database.Statement {
+extension Statement {
 	/// Binds a BLOB filled with zeroes to the SQL parameter at `index`.
 	///
 	/// The BLOB's contents may be updated using [incremental BLOB I/O](https://sqlite.org/c3ref/blob_open.html).
