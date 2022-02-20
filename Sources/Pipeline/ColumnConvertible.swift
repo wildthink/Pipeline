@@ -94,6 +94,71 @@ extension Row {
 	}
 }
 
+extension Statement {
+	/// Returns the value of the column at `index` for each row in the result set.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	///
+	/// - requires: `index >= 0`
+	/// - requires: `index < self.columnCount`
+	///
+	/// - parameter index: The index of the desired column.
+	///
+	/// - throws: An error if `index` is out of bounds.
+	public func values<T: ColumnConvertible>(forColumn index: Int) throws -> [T] {
+		var values = [T]()
+		try results { row in
+			values.append(try row.value(forColumn: index))
+		}
+		return values
+	}
+
+	/// Returns the value of the column with `name` for each row in the result set.
+	///
+	/// - parameter name: The name of the desired column.
+	///
+	/// - throws: An error if the column `name` doesn't exist.
+	public func values<T: ColumnConvertible>(forColumn name: String) throws -> [T] {
+		let index = try index(ofColumn: name)
+		var values = [T]()
+		try results { row in
+			values.append(try row.value(forColumn: index))
+		}
+		return values
+	}
+
+	/// Returns the values of the columns at `indexes` for each row in the result set.
+	///
+	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
+	///
+	/// - requires: `indexes.min() >= 0`
+	/// - requires: `indexes.max() < self.columnCount`
+	///
+	/// - parameter indexes: The indexes of the desired columns.
+	///
+	/// - throws: An error if any element of `indexes` is out of bounds.
+	public func values<S: Collection, T: ColumnConvertible>(forColumns indexes: S) throws -> [[T]] where S.Element == Int {
+		var values = [[T]](repeating: [], count: indexes.count)
+		for (n, x) in indexes.enumerated() {
+			values[n] = try self.values(forColumn: x)
+		}
+		return values
+	}
+
+	/// Returns the values of the columns with `names` for each row in the result set.
+	///
+	/// - parameter names: The names of the desired columns.
+	///
+	/// - throws: An error if a column in `names` doesn't exist.
+	public func values<S: Collection, T: ColumnConvertible>(forColumns names: S) throws -> [String: [T]] where S.Element == String {
+		var values: [String: [T]] = [:]
+		for name in names {
+			values[name] = try self.values(forColumn: name)
+		}
+		return values
+	}
+}
+
 extension String: ColumnConvertible {
 	public init(row: Row, column index: Int) throws {
 		self = try row.text(forColumn: index)
