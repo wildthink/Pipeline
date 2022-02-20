@@ -7,7 +7,7 @@
 import Foundation
 import Combine
 
-/// A decoder for `Database.Row` for  Combine's `.decode(type:decoder:)` operator
+/// A decoder for `Row` for  Combine's `.decode(type:decoder:)` operator
 public class RowDecoder: TopLevelDecoder {
 	/// A method  used to translate `Database.Value` into `Date`
 	public enum DateDecodingMethod {
@@ -48,7 +48,7 @@ public class RowDecoder: TopLevelDecoder {
 	/// - throws: An error if decoding was unsuccessful.
 	///
 	/// - returns: An instance of `type`.
-	public func decode<T>(_ type: T.Type, from row: Database.Row) throws -> T where T : Decodable {
+	public func decode<T>(_ type: T.Type, from row: Row) throws -> T where T : Decodable {
 		let decoder = RowDecoderGuts(payload: .row(row), codingPath: [], userInfo: userInfo, options: options)
 		return try T(from: decoder)
 	}
@@ -56,7 +56,7 @@ public class RowDecoder: TopLevelDecoder {
 
 private struct RowDecoderGuts {
 	enum Payload {
-		case row(Database.Row)
+		case row(Row)
 		case value(Database.Value)
 	}
 	let payload: Payload
@@ -82,7 +82,7 @@ extension RowDecoderGuts {
 extension RowDecoderGuts: Decoder {
 	func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Database.Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Row but found Database.Value."))
+			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found Database.Value."))
 		}
 		let container = KeyedContainer<Key>(values: try row.valueDictionary(), decoder: self, codingPath: codingPath)
 		return KeyedDecodingContainer(container)
@@ -90,14 +90,14 @@ extension RowDecoderGuts: Decoder {
 
 	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Database.Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Row but found Database.Value."))
+			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found Database.Value."))
 		}
 		return UnkeyedContainer(values: try row.values(), decoder: self, codingPath: codingPath)
 	}
 
 	func singleValueContainer() throws -> SingleValueDecodingContainer {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Database.Row."))
+			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Row."))
 		}
 		return SingleValueContainer(value: value, decoder: self, codingPath: codingPath)
 	}
@@ -106,7 +106,7 @@ extension RowDecoderGuts: Decoder {
 extension RowDecoderGuts {
 	func decode<T>(as type: T.Type) throws -> T where T : Decodable {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Database.Row."))
+			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Row."))
 		}
 		return try decode(value, as: type)
 	}
