@@ -18,122 +18,122 @@ import CSQLite
 /// 	}
 /// }
 /// ```
-public protocol DatabaseValueConvertible {
+public protocol ParameterBindable {
 	/// Returns the value of `self` expressed as a `Database.Value`.
 	///
 	/// - throws: An error if `self` couldn't be converted.
 	func databaseValue() throws -> Database.Value
 }
 
-extension String: DatabaseValueConvertible {
+extension String: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .text(self)
 	}
 }
 
-extension Data: DatabaseValueConvertible {
+extension Data: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .blob(self)
 	}
 }
 
-extension Int: DatabaseValueConvertible {
+extension Int: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension UInt: DatabaseValueConvertible {
+extension UInt: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(Int(bitPattern: self)))
 	}
 }
 
-extension Int8: DatabaseValueConvertible {
+extension Int8: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension UInt8: DatabaseValueConvertible {
+extension UInt8: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension Int16: DatabaseValueConvertible {
+extension Int16: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension UInt16: DatabaseValueConvertible {
+extension UInt16: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension Int32: DatabaseValueConvertible {
+extension Int32: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension UInt32: DatabaseValueConvertible {
+extension UInt32: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(self))
 	}
 }
 
-extension Int64: DatabaseValueConvertible {
+extension Int64: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(self)
 	}
 }
 
-extension UInt64: DatabaseValueConvertible {
+extension UInt64: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(Int64(bitPattern: self))
 	}
 }
 
-extension Float: DatabaseValueConvertible {
+extension Float: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .real(Double(self))
 	}
 }
 
-extension Double: DatabaseValueConvertible {
+extension Double: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .real(self)
 	}
 }
 
-extension Bool: DatabaseValueConvertible {
+extension Bool: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .integer(self ? 1 : 0)
 	}
 }
 
-extension UUID: DatabaseValueConvertible {
+extension UUID: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .text(uuidString.lowercased())
 	}
 }
 
-extension URL: DatabaseValueConvertible {
+extension URL: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .text(absoluteString)
 	}
 }
 
-extension Date: DatabaseValueConvertible {
+extension Date: ParameterBindable {
 	public func databaseValue() -> Database.Value {
 		return .real(timeIntervalSinceReferenceDate)
 	}
 }
 
-extension Optional: DatabaseValueConvertible where Wrapped: DatabaseValueConvertible {
+extension Optional: ParameterBindable where Wrapped: ParameterBindable {
 	public func databaseValue() throws -> Database.Value {
 		switch self {
 		case .none:
