@@ -117,7 +117,7 @@ extension Row {
 	/// - throws: An error if `index` is out of bounds.
 	///
 	/// - returns: The column's value.
-	public func value(ofColumn index: Int) throws -> Database.Value {
+	public func value(ofColumn index: Int) throws -> DatabaseValue {
 		let type = sqlite3_column_type(statement.preparedStatement, Int32(index))
 		guard statement.database.success else {
 			throw SQLiteError(fromDatabaseConnection: statement.database.databaseConnection)
@@ -165,7 +165,7 @@ extension Row {
 	/// - throws: An error if the column`name` doesn't exist.
 	///
 	/// - returns: The column's value.
-	public func value(ofColumn name: String) throws -> Database.Value {
+	public func value(ofColumn name: String) throws -> DatabaseValue {
 		return try value(ofColumn: statement.index(ofColumn: name))
 	}
 }
@@ -174,8 +174,8 @@ extension Row {
 	/// Returns the values of all columns in the row.
 	///
 	/// - returns: An array of the row's values.
-	public func values() throws -> [Database.Value] {
-		var values: [Database.Value] = []
+	public func values() throws -> [DatabaseValue] {
+		var values: [DatabaseValue] = []
 		for i in 0 ..< statement.columnCount {
 			values.append(try value(ofColumn: i))
 		}
@@ -187,7 +187,7 @@ extension Row {
 	/// - warning: This method will fail at runtime if the column names are not unique.
 	///
 	/// - returns: A dictionary of the row's values keyed by column name.
-	public func valueDictionary() throws -> [String: Database.Value] {
+	public func valueDictionary() throws -> [String: DatabaseValue] {
 		return try Dictionary(uniqueKeysWithValues: statement.columnNames.enumerated().map({ ($0.element, try value(ofColumn: $0.offset)) }))
 	}
 }
@@ -200,7 +200,7 @@ extension Row {
 	/// - parameter index: The index of the desired column.
 	///
 	/// - returns: The column's value or `nil` if the column doesn't exist.
-	public subscript(ofColumn index: Int) -> Database.Value? {
+	public subscript(ofColumn index: Int) -> DatabaseValue? {
 		return try? value(ofColumn: index)
 	}
 
@@ -209,7 +209,7 @@ extension Row {
 	/// - parameter name: The name of the desired column.
 	///
 	/// - returns: The column's value or `nil` if the column doesn't exist.
-	public subscript(ofColumn name: String) -> Database.Value? {
+	public subscript(ofColumn name: String) -> DatabaseValue? {
 		return try? value(ofColumn: name)
 	}
 }
@@ -223,7 +223,7 @@ extension Row: Collection {
 		columnCount
 	}
 
-	public subscript(position: Int) -> Database.Value {
+	public subscript(position: Int) -> DatabaseValue {
 		do {
 			return try value(ofColumn: position)
 		} catch {

@@ -7,26 +7,24 @@
 import Foundation
 import CSQLite
 
-extension Database {
-	/// A fundamental data type value in an SQLite database.
-	///
-	/// - seealso: [Datatypes In SQLite](https://sqlite.org/datatype3.html)
-	public enum Value {
-		/// A signed integer value.
-		case integer(Int64)
-		/// A floating-point value.
-		case real(Double)
-		/// A text value.
-		case text(String)
-		/// A BLOB (untyped bytes) value.
-		case blob(Data)
-		/// A null value.
-		case null
-	}
+/// A fundamental data type value in an SQLite database.
+///
+/// - seealso: [Datatypes In SQLite](https://sqlite.org/datatype3.html)
+public enum DatabaseValue {
+	/// A signed integer value.
+	case integer(Int64)
+	/// A floating-point value.
+	case real(Double)
+	/// A text value.
+	case text(String)
+	/// A BLOB (untyped bytes) value.
+	case blob(Data)
+	/// A null value.
+	case null
 }
 
-extension Database.Value: Equatable {
-	public static func == (lhs: Database.Value, rhs: Database.Value) -> Bool {
+extension DatabaseValue: Equatable {
+	public static func == (lhs: DatabaseValue, rhs: DatabaseValue) -> Bool {
 		switch (lhs, rhs) {
 		case (.integer(let i1), .integer(let i2)):
 			return i1 == i2
@@ -46,7 +44,7 @@ extension Database.Value: Equatable {
 	}
 }
 
-extension Database.Value {
+extension DatabaseValue {
 	/// Returns `true` if self is `.null`.
 	public var isNull: Bool {
 		if case .null = self {
@@ -56,37 +54,37 @@ extension Database.Value {
 	}
 }
 
-extension Database.Value: ExpressibleByNilLiteral {
+extension DatabaseValue: ExpressibleByNilLiteral {
 	public init(nilLiteral: ()) {
 		self = .null
 	}
 }
 
-extension Database.Value: ExpressibleByIntegerLiteral {
+extension DatabaseValue: ExpressibleByIntegerLiteral {
 	public init(integerLiteral value: IntegerLiteralType) {
 		self = .integer(Int64(value))
 	}
 }
 
-extension Database.Value: ExpressibleByFloatLiteral {
+extension DatabaseValue: ExpressibleByFloatLiteral {
 	public init(floatLiteral value: FloatLiteralType) {
 		self = .real(value)
 	}
 }
 
-extension Database.Value: ExpressibleByStringLiteral {
+extension DatabaseValue: ExpressibleByStringLiteral {
 	public init(stringLiteral value: StringLiteralType) {
 		self = .text(value)
 	}
 }
 
-extension Database.Value: ExpressibleByBooleanLiteral {
+extension DatabaseValue: ExpressibleByBooleanLiteral {
 	public init(booleanLiteral value: BooleanLiteralType) {
 		self = .integer(value ? 1 : 0)
 	}
 }
 
-extension Database.Value: CustomStringConvertible {
+extension DatabaseValue: CustomStringConvertible {
 	/// A description of the type and value of `self`.
 	public var description: String {
 		switch self {

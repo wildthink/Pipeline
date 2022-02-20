@@ -303,8 +303,8 @@ extension Statement {
 	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
-	public func values(ofColumn index: Int) throws -> [Database.Value] {
-		var values = [Database.Value]()
+	public func values(ofColumn index: Int) throws -> [DatabaseValue] {
+		var values = [DatabaseValue]()
 		try results { row in
 			values.append(try row.value(ofColumn: index))
 		}
@@ -316,9 +316,9 @@ extension Statement {
 	/// - parameter name: The name of the desired column.
 	///
 	/// - throws: An error if the column `name` doesn't exist.
-	public func values(ofColumn name: String) throws -> [Database.Value] {
+	public func values(ofColumn name: String) throws -> [DatabaseValue] {
 		let index = try index(ofColumn: name)
-		var values = [Database.Value]()
+		var values = [DatabaseValue]()
 		try results { row in
 			values.append(try row.value(ofColumn: index))
 		}
@@ -335,8 +335,8 @@ extension Statement {
 	/// - parameter indexes: The indexes of the desired columns.
 	///
 	/// - throws: An error if any element of `indexes` is out of bounds.
-	public func values<S: Collection>(ofColumns indexes: S) throws -> [[Database.Value]] where S.Element == Int {
-		var values = [[Database.Value]](repeating: [], count: indexes.count)
+	public func values<S: Collection>(ofColumns indexes: S) throws -> [[DatabaseValue]] where S.Element == Int {
+		var values = [[DatabaseValue]](repeating: [], count: indexes.count)
 		for (n, x) in indexes.enumerated() {
 			values[n] = try self.values(ofColumn: x)
 		}
@@ -348,8 +348,8 @@ extension Statement {
 	/// - parameter names: The names of the desired columns.
 	///
 	/// - throws: An error if a column in `names` doesn't exist.
-	public func values<S: Collection>(ofColumns names: S) throws -> [String: [Database.Value]] where S.Element == String {
-		var values: [String: [Database.Value]] = [:]
+	public func values<S: Collection>(ofColumns names: S) throws -> [String: [DatabaseValue]] where S.Element == String {
+		var values: [String: [DatabaseValue]] = [:]
 		for name in names {
 			values[name] = try self.values(ofColumn: name)
 		}

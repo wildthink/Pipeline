@@ -59,7 +59,7 @@ extension Statement {
 	/// - parameter index: The index of the SQL parameter to bind.
 	///
 	/// - throws: An error if `value` couldn't be bound.
-	public func bind(value: Database.Value, toParameter index: Int) throws {
+	public func bind(value: DatabaseValue, toParameter index: Int) throws {
 		switch value {
 		case .integer(let i):
 			guard sqlite3_bind_int64(preparedStatement, Int32(index), i) == SQLITE_OK else {
@@ -94,7 +94,7 @@ extension Statement {
 	/// - parameter name: The name of the SQL parameter to bind.
 	///
 	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
-	public func bind(value: Database.Value, toParameter name: String) throws {
+	public func bind(value: DatabaseValue, toParameter name: String) throws {
 		try bind(value: value, toParameter: indexOfParameter(named: name))
 	}
 }

@@ -22,7 +22,7 @@ import CSQLite
 ///
 /// ```swift
 /// extension NSNumber: DatabaseSerializable {
-///     public func serialized() -> Database.Value {
+///     public func serialized() -> DatabaseValue {
 ///         switch CFNumberGetType(self as CFNumber) {
 ///         case .sInt8Type, .sInt16Type, .sInt32Type, .charType, .shortType, .intType,
 ///              .sInt64Type, .longType, .longLongType, .cfIndexType, .nsIntegerType:
@@ -32,7 +32,7 @@ import CSQLite
 ///         }
 ///     }
 ///
-///     public static func deserialize(from value: Database.Value) throws -> Self {
+///     public static func deserialize(from value: DatabaseValue) throws -> Self {
 ///         switch value {
 ///         case .integer(let i):
 ///             return self.init(value: i)
@@ -48,7 +48,7 @@ public protocol DatabaseSerializable: ParameterBindable {
 	/// Returns a serialized value of `self`.
 	///
 	/// - returns: A serialized value representing `self`
-	func serialized() -> Database.Value
+	func serialized() -> DatabaseValue
 
 	/// Deserializes and returns `value` as `Self`.
 	///
@@ -57,7 +57,7 @@ public protocol DatabaseSerializable: ParameterBindable {
 	/// - throws: An error if `value` contains an illegal value for `Self`
 	///
 	/// - returns: An instance of `Self`
-	static func deserialize(from value: Database.Value) throws -> Self
+	static func deserialize(from value: DatabaseValue) throws -> Self
 }
 
 extension DatabaseSerializable {
@@ -158,7 +158,7 @@ extension Statement {
 }
 
 extension NSNumber: DatabaseSerializable {
-	public func serialized() -> Database.Value {
+	public func serialized() -> DatabaseValue {
 		switch CFNumberGetType(self as CFNumber) {
 		case .sInt8Type, .sInt16Type, .sInt32Type, .charType, .shortType, .intType,
 				.sInt64Type, .longType, .longLongType, .cfIndexType, .nsIntegerType:
@@ -170,7 +170,7 @@ extension NSNumber: DatabaseSerializable {
 		}
 	}
 
-	public static func deserialize(from value: Database.Value) throws -> Self {
+	public static func deserialize(from value: DatabaseValue) throws -> Self {
 		switch value {
 		case .integer(let i):
 			return self.init(value: i)
@@ -183,11 +183,11 @@ extension NSNumber: DatabaseSerializable {
 }
 
 extension NSNull: DatabaseSerializable {
-	public func serialized() -> Database.Value {
+	public func serialized() -> DatabaseValue {
 		return .null
 	}
 
-	public static func deserialize(from value: Database.Value) throws -> Self {
+	public static func deserialize(from value: DatabaseValue) throws -> Self {
 		switch value {
 		case .null:
 			return self.init()

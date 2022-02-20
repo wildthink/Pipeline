@@ -15,7 +15,7 @@ extension Database {
 	/// - throws: `Error`
 	///
 	/// - returns: The result of applying the function to `values`
-	public typealias SQLFunction = (_ values: [Value]) throws -> Value
+	public typealias SQLFunction = (_ values: [DatabaseValue]) throws -> DatabaseValue
 
 	/// Custom SQL function flags.
 	///
@@ -66,7 +66,7 @@ public protocol SQLAggregateFunction {
 	/// - parameter values: The SQL function parameters.
 	///
 	/// - throws: `Error`.
-	func step(_ values: [Database.Value]) throws
+	func step(_ values: [DatabaseValue]) throws
 
 	/// Returns the current value of the aggregate function.
 	///
@@ -75,7 +75,7 @@ public protocol SQLAggregateFunction {
 	/// - throws: `Error`.
 	///
 	/// - returns: The current value of the aggregate function.
-	func final() throws -> Database.Value
+	func final() throws -> DatabaseValue
 }
 
 /// A custom SQL aggregate window function.
@@ -85,14 +85,14 @@ public protocol SQLAggregateWindowFunction: SQLAggregateFunction {
 	/// - parameter values: The SQL function parameters.
 	///
 	/// - throws: `Error`.
-	func inverse(_ values: [Database.Value]) throws
+	func inverse(_ values: [DatabaseValue]) throws
 
 	/// Returns the current value of the aggregate window function.
 	///
 	/// - throws: `Error`.
 	///
 	/// - returns: The current value of the aggregate window function.
-	func value() throws -> Database.Value
+	func value() throws -> DatabaseValue
 }
 
 extension Database {
@@ -127,7 +127,7 @@ extension Database {
 			let context = sqlite3_user_data(sqlite_context)
 			let function_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: SQLFunction.self)
 			let args = UnsafeBufferPointer(start: argv, count: Int(argc))
-			let arguments = args.map { Database.Value(sqliteValue: $0.unsafelyUnwrapped) }
+			let arguments = args.map { DatabaseValue(sqliteValue: $0.unsafelyUnwrapped) }
 			do {
 				set_sqlite3_result(sqlite_context, value: try function_ptr.pointee(arguments))
 			} catch let error {
@@ -147,7 +147,7 @@ extension Database {
 	/// For example, an integer sum aggregate function could be implemented as:
 	/// ```swift
 	/// class IntegerSumAggregateFunction: SQLAggregateFunction {
-	///     func step(_ values: [Database.Value]) throws {
+	///     func step(_ values: [DatabaseValue]) throws {
 	///         let value = values.first.unsafelyUnwrapped
 	///         switch value {
 	///             case .integer(let i):
@@ -157,11 +157,11 @@ extension Database {
 	///         }
 	///     }
 	///
-	///     func final() throws -> Database.Value {
+	///     func final() throws -> DatabaseValue {
 	///         defer {
 	///             sum = 0
 	///         }
-	///         return Database.Value(sum)
+	///         return DatabaseValue(sum)
 	///     }
 	///
 	///     var sum: Int64 = 0
@@ -186,7 +186,7 @@ extension Database {
 			let context_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: SQLAggregateFunction.self)
 			let function = context_ptr.pointee
 			let args = UnsafeBufferPointer(start: argv, count: Int(argc))
-			let arguments = args.map { Database.Value(sqliteValue: $0.unsafelyUnwrapped) }
+			let arguments = args.map { DatabaseValue(sqliteValue: $0.unsafelyUnwrapped) }
 			do {
 				try function.step(arguments)
 			} catch let error {
@@ -215,7 +215,7 @@ extension Database {
 	/// For example, an integer sum aggregate window function could be implemented as:
 	/// ```swift
 	/// class IntegerSumAggregateWindowFunction: SQLAggregateWindowFunction {
-	///     func step(_ values: [Database.Value]) throws {
+	///     func step(_ values: [DatabaseValue]) throws {
 	///         let value = values.first.unsafelyUnwrapped
 	///         switch value {
 	///             case .integer(let i):
@@ -225,7 +225,7 @@ extension Database {
 	///         }
 	///     }
 	///
-	///     func inverse(_ values: [Database.Value]) throws {
+	///     func inverse(_ values: [DatabaseValue]) throws {
 	///         let value = values.first.unsafelyUnwrapped
 	///         switch value {
 	///             case .integer(let i):
@@ -235,15 +235,15 @@ extension Database {
 	///         }
 	///     }
 	///
-	///     func value() throws -> Database.Value {
-	///         return Database.Value(sum)
+	///     func value() throws -> DatabaseValue {
+	///         return DatabaseValue(sum)
 	///     }
 	///
-	///     func final() throws -> Database.Value {
+	///     func final() throws -> DatabaseValue {
 	///         defer {
 	///             sum = 0
 	///         }
-	///         return Database.Value(sum)
+	///         return DatabaseValue(sum)
 	///     }
 	///
 	///     var sum: Int64 = 0
@@ -267,7 +267,7 @@ extension Database {
 			let context_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: SQLAggregateWindowFunction.self)
 			let function = context_ptr.pointee
 			let args = UnsafeBufferPointer(start: argv, count: Int(argc))
-			let arguments = args.map { Database.Value(sqliteValue: $0.unsafelyUnwrapped) }
+			let arguments = args.map { DatabaseValue(sqliteValue: $0.unsafelyUnwrapped) }
 			do {
 				try function.step(arguments)
 			} catch let error {
@@ -296,7 +296,7 @@ extension Database {
 			let context_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: SQLAggregateWindowFunction.self)
 			let function = context_ptr.pointee
 			let args = UnsafeBufferPointer(start: argv, count: Int(argc))
-			let arguments = args.map { Database.Value(sqliteValue: $0.unsafelyUnwrapped) }
+			let arguments = args.map { DatabaseValue(sqliteValue: $0.unsafelyUnwrapped) }
 			do {
 				try function.inverse(arguments)
 			} catch let error {
@@ -328,7 +328,7 @@ extension Database {
 ///
 /// - parameter sqlite_context: An `sqlite3_context *` object.
 /// - parameter value: The value to pass.
-private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: Database.Value) {
+private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: DatabaseValue) {
 	switch value {
 	case .integer(let i):
 		sqlite3_result_int64(sqlite_context, i)
@@ -350,7 +350,7 @@ private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: Databas
 /// - seealso: [Obtaining SQL Values](https://sqlite.org/c3ref/value_blob.html)
 typealias SQLiteValue = OpaquePointer
 
-extension Database.Value {
+extension DatabaseValue {
 	/// Creates an instance containing `value`.
 	///
 	/// - parameter value: An `sqlite3_value *` object.

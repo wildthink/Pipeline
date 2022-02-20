@@ -9,7 +9,7 @@ import Combine
 
 /// A decoder for `Row` for  Combine's `.decode(type:decoder:)` operator
 public class RowDecoder: TopLevelDecoder {
-	/// A method  used to translate `Database.Value` into `Date`
+	/// A method  used to translate `DatabaseValue` into `Date`
 	public enum DateDecodingMethod {
 		/// Defer to `Date` for decoding.
 		case deferredToDate
@@ -22,10 +22,10 @@ public class RowDecoder: TopLevelDecoder {
 		/// Decode the date as text parsed by the given formatter.
 		case formatted(DateFormatter)
 		/// Decode the date using the given closure.
-		case custom((_ value: Database.Value) throws -> Date)
+		case custom((_ value: DatabaseValue) throws -> Date)
 	}
 
-	/// The method  used to translate `Database.Value` into `Date`.
+	/// The method  used to translate `DatabaseValue` into `Date`.
 	var dateDecodingMethod: DateDecodingMethod = .deferredToDate
 
 	/// Currently not used.
@@ -57,7 +57,7 @@ public class RowDecoder: TopLevelDecoder {
 private struct RowDecoderGuts {
 	enum Payload {
 		case row(Row)
-		case value(Database.Value)
+		case value(DatabaseValue)
 	}
 	let payload: Payload
 	let codingPath: [CodingKey]
@@ -82,7 +82,7 @@ extension RowDecoderGuts {
 extension RowDecoderGuts: Decoder {
 	func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found Database.Value."))
+			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
 		}
 		let container = KeyedContainer<Key>(values: try row.valueDictionary(), decoder: self, codingPath: codingPath)
 		return KeyedDecodingContainer(container)
@@ -90,14 +90,14 @@ extension RowDecoderGuts: Decoder {
 
 	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found Database.Value."))
+			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
 		}
 		return UnkeyedContainer(values: try row.values(), decoder: self, codingPath: codingPath)
 	}
 
 	func singleValueContainer() throws -> SingleValueDecodingContainer {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Row."))
+			throw DecodingError.typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
 		}
 		return SingleValueContainer(value: value, decoder: self, codingPath: codingPath)
 	}
@@ -106,12 +106,12 @@ extension RowDecoderGuts: Decoder {
 extension RowDecoderGuts {
 	func decode<T>(as type: T.Type) throws -> T where T : Decodable {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(Database.Value.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Database.Value but found Row."))
+			throw DecodingError.typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
 		}
 		return try decode(value, as: type)
 	}
 
-	func decode<T>(_ value: Database.Value, as type: T.Type) throws -> T where T : Decodable {
+	func decode<T>(_ value: DatabaseValue, as type: T.Type) throws -> T where T : Decodable {
 		if type == Date.self {
 			return try decodeDate(value) as! T
 		} else if type == URL.self {
@@ -121,21 +121,21 @@ extension RowDecoderGuts {
 		}
 	}
 
-	func decodeFixedWidthInteger<T>(_ value: Database.Value) throws -> T where T: FixedWidthInteger {
+	func decodeFixedWidthInteger<T>(_ value: DatabaseValue) throws -> T where T: FixedWidthInteger {
 		guard case let .integer(i) = value else {
 			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
 		return T(i)
 	}
 
-	func decodeFloatingPoint<T>(_ value: Database.Value) throws -> T where T: BinaryFloatingPoint {
+	func decodeFloatingPoint<T>(_ value: DatabaseValue) throws -> T where T: BinaryFloatingPoint {
 		guard case let .real(r) = value else {
 			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 		}
 		return T(r)
 	}
 
-	private func decodeDate(_ value: Database.Value) throws -> Date {
+	private func decodeDate(_ value: DatabaseValue) throws -> Date {
 		switch options.dateDecodingStrategy {
 		case .deferredToDate:
 			return try Date(from: self)
@@ -176,7 +176,7 @@ extension RowDecoderGuts {
 		}
 	}
 
-	private func decodeURL(_ value: Database.Value) throws -> URL {
+	private func decodeURL(_ value: DatabaseValue) throws -> URL {
 		guard case let .text(t) = value else {
 			throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 		}
@@ -188,7 +188,7 @@ extension RowDecoderGuts {
 }
 
 private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
-	let values: [String: Database.Value]
+	let values: [String: DatabaseValue]
 	let decoder: RowDecoderGuts
 	let codingPath: [CodingKey]
 
@@ -295,7 +295,7 @@ private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
 		fatalError("superDecoder(forKey:) not implemented for KeyedContainer")
 	}
 
-	private func valueForKey(_ key: K) throws -> Database.Value {
+	private func valueForKey(_ key: K) throws -> DatabaseValue {
 		guard let value = values[key.stringValue] else {
 			throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" not found."))
 		}
@@ -312,7 +312,7 @@ private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
 }
 
 private struct UnkeyedContainer: UnkeyedDecodingContainer {
-	let values: [Database.Value]
+	let values: [DatabaseValue]
 	let decoder: RowDecoderGuts
 	let codingPath: [CodingKey]
 	var currentIndex: Int = 0
@@ -455,7 +455,7 @@ private struct UnkeyedContainer: UnkeyedDecodingContainer {
 }
 
 private struct SingleValueContainer: SingleValueDecodingContainer {
-	let value: Database.Value
+	let value: DatabaseValue
 	let decoder: RowDecoderGuts
 	let codingPath: [CodingKey]
 
