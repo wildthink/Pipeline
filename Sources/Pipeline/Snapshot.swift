@@ -54,3 +54,30 @@ extension Snapshot: Comparable {
 		return sqlite3_snapshot_cmp(lhs.snapshot, rhs.snapshot) < 0
 	}
 }
+
+extension Database {
+	/// Records a snapshot of the current state of a database schema.
+	///
+	/// - parameter schema: The database schema to snapshot.
+	///
+	/// - throws: An error if the snapshot could not be recorded.
+	///
+	/// - seealso: [Record A Database Snapshot](https://www.sqlite.org/c3ref/snapshot_get.html)
+	public func takeSnapshot(schema: String = "main") throws -> Snapshot {
+		return try Snapshot(database: self, schema: schema)
+	}
+
+	/// Starts or upgrades a read transaction for a database schema to a specific snapshot.
+	///
+	/// - parameter snapshot: The desired historical snapshot.
+	/// - parameter schema: The desired database schema.
+	///
+	/// - throws: An error if the snapshot could not be opened.
+	///
+	/// - seealso: [Start a read transaction on an historical snapshot](https://www.sqlite.org/c3ref/snapshot_open.html)
+	public func openSnapshot(_ snapshot: Snapshot, schema: String = "main") throws {
+		guard sqlite3_snapshot_open(databaseConnection, schema, snapshot.snapshot) == SQLITE_OK else {
+			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+		}
+	}
+}
