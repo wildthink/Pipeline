@@ -274,3 +274,10 @@ extension Date: ColumnConvertible {
 		self.init(timeIntervalSinceReferenceDate: try row.real(forColumn: index))
 	}
 }
+
+extension ColumnConvertible where Self: Decodable {
+	public init(row: Row, column index: Int) throws {
+		let data = try row.blob(forColumn: index)
+		self = try JSONDecoder().decode(Self.self, from: data)
+	}
+}

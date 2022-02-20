@@ -280,3 +280,10 @@ extension Optional: ParameterBindable where Wrapped: ParameterBindable {
 		}
 	}
 }
+
+extension ParameterBindable where Self: Encodable {
+	public func bind(toStatement statement: Statement, parameter index: Int) throws {
+		let data = try JSONEncoder().encode(self)
+		try statement.bind(blob: data, toParameter: index)
+	}
+}
