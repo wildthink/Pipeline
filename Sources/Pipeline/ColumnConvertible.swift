@@ -66,7 +66,7 @@ extension Row {
 	/// - returns: The column's value.
 	public func value<T: ColumnConvertible>(forColumn index: Int) throws -> T {
 		guard let value: T = try value(forColumn: index) else {
-			throw Database.Error(message: "SQL NULL encountered for column \(index)")
+			throw DatabaseError(message: "SQL NULL encountered for column \(index)")
 		}
 		return value
 	}
@@ -253,7 +253,7 @@ extension UUID: ColumnConvertible {
 	public init(row: Row, column index: Int) throws {
 		let s = try row.text(forColumn: index)
 		guard let u = UUID(uuidString: s) else {
-			throw Database.Error(message: "text \"\(s)\" isn't a valid UUID")
+			throw DatabaseError(message: "text \"\(s)\" isn't a valid UUID")
 		}
 		self = u
 	}
@@ -263,7 +263,7 @@ extension URL: ColumnConvertible {
 	public init(row: Row, column index: Int) throws {
 		let s = try row.text(forColumn: index)
 		guard let u = URL(string: s) else {
-			throw Database.Error(message: "text \"\(s)\" isn't a valid URL")
+			throw DatabaseError(message: "text \"\(s)\" isn't a valid URL")
 		}
 		self = u
 	}

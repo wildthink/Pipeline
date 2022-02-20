@@ -177,7 +177,7 @@ extension NSNumber: DatabaseSerializable {
 		case .real(let r):
 			return self.init(value: r)
 		default:
-			throw Database.Error(message: "\(value) is not a number")
+			throw DatabaseError(message: "\(value) is not a number")
 		}
 	}
 }
@@ -192,7 +192,7 @@ extension NSNull: DatabaseSerializable {
 		case .null:
 			return self.init()
 		default:
-			throw Database.Error(message: "\(value) is not NULL")
+			throw DatabaseError(message: "\(value) is not NULL")
 		}
 	}
 }

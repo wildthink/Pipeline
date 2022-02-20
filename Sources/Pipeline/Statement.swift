@@ -130,7 +130,7 @@ public final class Statement {
 	/// - returns: The name of the column for the specified index.
 	public func name(ofColumn index: Int) throws -> String {
 		guard let name = sqlite3_column_name(preparedStatement, Int32(index)) else {
-			throw Database.Error(message: "Column index \(index) out of bounds")
+			throw DatabaseError(message: "Column index \(index) out of bounds")
 		}
 		return String(cString: name)
 	}
@@ -156,7 +156,7 @@ public final class Statement {
 	/// - returns: The index of the column with the specified name.
 	public func index(ofColumn name: String) throws -> Int {
 		guard let index = columnNamesAndIndexes[name] else {
-			throw Database.Error(message: "Unknown column \"\(name)\"")
+			throw DatabaseError(message: "Unknown column \"\(name)\"")
 		}
 		return index
 	}

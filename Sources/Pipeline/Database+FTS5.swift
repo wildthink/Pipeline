@@ -259,7 +259,7 @@ private func get_fts5_api(for databaseConnection: SQLiteDatabaseConnection) thro
 	}
 
 	guard let api = api_ptr else {
-		throw Database.Error(message: "FTS5 not available")
+		throw DatabaseError(message: "FTS5 not available")
 	}
 
 	return api
