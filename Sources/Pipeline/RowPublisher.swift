@@ -23,14 +23,14 @@ extension Database {
 
 extension Publishers {
 	struct RowPublisher: Publisher {
-		typealias Output = Database.Row
+		typealias Output = Row
 		typealias Failure = SQLiteError
 
 		private let database: Database
 		private let sql: String
-		private let bindings: (_ statement: Database.Statement) throws -> Void
+		private let bindings: (_ statement: Statement) throws -> Void
 
-		fileprivate init(database: Database, sql: String, bindings: @escaping (_ statement: Database.Statement) throws -> Void) {
+		fileprivate init(database: Database, sql: String, bindings: @escaping (_ statement: Statement) throws -> Void) {
 			self.database = database
 			self.sql = sql
 			self.bindings = bindings
@@ -58,9 +58,9 @@ extension Publishers.RowPublisher {
 		/// The current subscriber demand.
 		private var demand: Subscribers.Demand = .none
 		/// The statement providing the result rows.
-		private let statement: Database.Statement
+		private let statement: Statement
 
-		fileprivate init(subscriber: S, statement: Database.Statement) {
+		fileprivate init(subscriber: S, statement: Statement) {
 			self.subscriber = AnySubscriber(subscriber)
 			self.statement = statement
 		}
@@ -72,7 +72,7 @@ extension Publishers.RowPublisher {
 				switch result {
 				case SQLITE_ROW:
 					self.demand -= 1
-					self.demand += subscriber.receive(Database.Row(statement: statement))
+					self.demand += subscriber.receive(Row(statement: statement))
 				case SQLITE_DONE:
 					subscriber.receive(completion: .finished)
 					self.demand = .none
