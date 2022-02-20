@@ -57,9 +57,13 @@ extension Statement {
 extension Statement {
 	/// Binds the *n* parameters in `values` to the first *n* SQL parameters of `self`.
 	///
+	/// - requires: `values.count <= self.parameterCount`
+	///
 	/// - parameter values: A collection of values to bind to SQL parameters.
 	///
 	/// - throws: An error if one of `values` couldn't be bound.
+	///
+	/// - returns: `self`
 	@discardableResult public func bind<C: Collection>(parameterValues values: C) throws -> Statement where C.Element: ParameterBindable {
 		var index = 1
 		for value in values {
@@ -71,12 +75,48 @@ extension Statement {
 
 	/// Binds *value* to SQL parameter *name* for each (*name*, *value*) in `parameters`.
 	///
+	/// - requires: `parameters.count <= self.parameterCount`
+	///
 	/// - parameter parameters: A collection of name and value pairs to bind to SQL parameters.
 	///
 	/// - throws: An error if the SQL parameter *name* doesn't exist or *value* couldn't be bound.
 	///
 	/// - returns: `self`
 	@discardableResult public func bind<C: Collection>(parameters: C) throws -> Statement where C.Element == (String, V: ParameterBindable) {
+		for (name, value) in parameters {
+			try value.bind(toStatement: self, parameter: indexOfParameter(named: name))
+		}
+		return self
+	}
+}
+
+extension Statement {
+	/// Binds the *n* parameters in `values` to the first *n* SQL parameters of `self`.
+	///
+	/// - requires: `values.count <= self.parameterCount`
+	///
+	/// - parameter values: A series of values to bind to SQL parameters.
+	///
+	/// - throws: An error if one of `values` couldn't be bound.
+	///
+	/// - returns: `self`
+	@discardableResult public func bind(parameterValues values: [ParameterBindable]) throws -> Statement {
+		var index = 1
+		for value in values {
+			try value.bind(toStatement: self, parameter: index)
+			index += 1
+		}
+		return self
+	}
+
+	/// Binds *value* to SQL parameter *name* for each (*name*, *value*) in `parameters`.
+	///
+	/// - parameter parameters: A series of name and value pairs to bind to SQL parameters
+	///
+	/// - throws: An error if the SQL parameter *name* doesn't exist or *value* couldn't be bound
+	///
+	/// - returns: `self`
+	@discardableResult public func bind(parameters: [String: ParameterBindable]) throws -> Statement {
 		for (name, value) in parameters {
 			try value.bind(toStatement: self, parameter: indexOfParameter(named: name))
 		}
