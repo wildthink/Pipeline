@@ -4,6 +4,7 @@
 // MIT license
 //
 
+import Foundation
 import CSQLite
 
 /// An `Error` supplying an SQLite error code and description.
