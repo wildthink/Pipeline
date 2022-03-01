@@ -208,6 +208,40 @@ final class PipelineTests: XCTestCase {
 		}
 	}
 
+    // jmj
+    func testJSON() {
+        let connection = try! Connection()
+        let list = [1, 2, 3]
+         
+        try! connection.execute(sql: "create table t1(a);")
+                
+        try! connection.prepare(sql: "insert into t1(a) values (?);").bind(.json(list), toParameter: 1).execute()
+        
+        let b = try! connection.prepare(sql: "select * from t1 limit 1;").step()!.get(.json([Int].self), at: 0)
+        
+        XCTAssertEqual(list, b)
+        
+        let s = try! connection.prepare(sql: "select * from t1;")
+        try! s.results { row in
+            let c = try row.get(.string, at: 0)
+            XCTAssertEqual(c, "[1,2,3]")
+        }
+     }
+
+    func testEmbeddedJSON() {
+        let connection = try! Connection()
+        
+        struct TestStruct: Codable {
+            let a: Int
+            let b: [String]
+            let c: [Int]
+            let d: [String:Float]
+            
+        }
+        
+        try! connection.execute(sql: "create table t1(a);")
+    }
+    
 	func testCodable() {
 		let connection = try! Connection()
 
@@ -1107,6 +1141,7 @@ final class PipelineTests: XCTestCase {
 	}
 
 #endif
+<<<<<<< HEAD
 
 	/// Creates a URL for a temporary file on disk. Registers a teardown block to
 	/// delete a file at that URL (if one exists) during test teardown.

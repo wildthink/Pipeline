@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "csqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sbooth/CSQLite",
+      "state" : {
+        "revision" : "25898dc4ece16ae2e15bc5b72c74a53aa80ed6fd",
+        "version" : "3.44.2"
+      }
+    }
+  ],
+  "version" : 2
+}

@@ -370,8 +370,17 @@ extension ColumnValueConverter where T: Decodable {
 	/// - note: The BLOB value is interpreted  as encoded JSON data of `type`.
 	public static func json(_ type: T.Type = T.self, decoder: JSONDecoder = JSONDecoder()) -> ColumnValueConverter {
 		ColumnValueConverter { row, index in
-			let b = try row.blob(at: index)
-			return try decoder.decode(type, from: b)
+            do {
+                let b = try row.blob(at: index)
+                return try decoder.decode(type, from: b)
+            } catch {
+                // JMJ text can also be JSON in SQLite
+                guard let b = try row.text(at: index).data(using: .utf8)
+                else {
+                    throw DatabaseError("column \"\(index)\" isn't a valid JSON format")
+                }
+                return try decoder.decode(type, from: b)
+            }
 		}
 	}
 }

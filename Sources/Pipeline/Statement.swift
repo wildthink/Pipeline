@@ -59,7 +59,7 @@ public final class Statement {
 	/// The owning database connection.
 	public let connection: Connection
 	/// The underlying `sqlite3_stmt *` object.
-	let preparedStatement: SQLitePreparedStatement
+	public let preparedStatement: SQLitePreparedStatement
 
 	/// Creates a compiled SQL statement.
 	///

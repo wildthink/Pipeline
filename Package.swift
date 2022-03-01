@@ -9,12 +9,15 @@ import PackageDescription
 // For session support:
 //  - Uncomment lines containing `SQLITE_ENABLE_PREUPDATE_HOOK`
 //  - Uncomment lines containing `SQLITE_ENABLE_SESSION`
+//
+// For RBU support ("Resumable Bulk Update")
+//  - Uncomment lines containing `SQLITE_ENABLE_RBU`
 
 let package = Package(
 	name: "Pipeline",
 	platforms: [
-		.macOS(.v10_15),
-		.iOS(.v13),
+        .macOS(.v10_15),
+        .iOS(.v13),
 	],
 	products: [
 		// Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -38,11 +41,13 @@ let package = Package(
 			dependencies: ["CSQLite", "CPipeline"],
 			cSettings: [
 //				.define("SQLITE_ENABLE_PREUPDATE_HOOK", to: "1"),
-//				.define("SQLITE_ENABLE_SESSION", to: "1"),
+//              .define("SQLITE_ENABLE_SESSION", to: "1"),
+//              .define("SQLITE_ENABLE_RBU", to: "1"),
 			],
 			swiftSettings: [
 //				.define("SQLITE_ENABLE_PREUPDATE_HOOK"),
 //				.define("SQLITE_ENABLE_SESSION"),
+//              .define("SQLITE_ENABLE_RBU", to: "1"),
 			]),
 		.testTarget(
 			name: "PipelineTests",
@@ -50,6 +55,7 @@ let package = Package(
 			swiftSettings: [
 //				.define("SQLITE_ENABLE_PREUPDATE_HOOK"),
 //				.define("SQLITE_ENABLE_SESSION"),
+//              .define("SQLITE_ENABLE_RBU", to: "1"),
 			]),
 	],
 	cLanguageStandard: .gnu11
