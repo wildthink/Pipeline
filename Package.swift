@@ -6,8 +6,8 @@ import PackageDescription
 let package = Package(
 	name: "Pipeline",
 	platforms: [
-		.macOS(.v10_15),
-		.iOS(.v13),
+        .macOS(.v10_15),
+        .iOS(.v14),
 	],
 	products: [
 		// Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -19,6 +19,7 @@ let package = Package(
 		// Dependencies declare other packages that this package depends on.
 		// .package(url: /* package url */, from: "1.0.0"),
 		.package(url: "https://github.com/sbooth/CSQLite", from: "3.37.0")
+//		.package(url: "https://github.com/sbooth/SQLite3", from: "3.36.0")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package. A target can define a module or a test suite.

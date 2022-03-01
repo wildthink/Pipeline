@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "CSQLite",
+        "repositoryURL": "https://github.com/sbooth/CSQLite",
+        "state": {
+          "branch": null,
+          "revision": "952819c9ba80494f0dbe50f33d1a75fb06b346a2",
+          "version": "3.38.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
