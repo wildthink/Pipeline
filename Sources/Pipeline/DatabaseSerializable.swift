@@ -166,7 +166,7 @@ extension NSNumber: DatabaseSerializable {
 		case .float32Type, .float64Type, .floatType, .doubleType, .cgFloatType:
 			return .real(doubleValue)
 		@unknown default:
-			return .null
+			fatalError("Unexpected CFNumber type")
 		}
 	}
 
