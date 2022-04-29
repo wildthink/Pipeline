@@ -276,7 +276,7 @@ extension Database {
 extension Database {
 	/// Returns `true` if the last `sqlite3_` API call succeeded
 	public var success: Bool {
-		let result = errorCode
+		let result = sqlite3_errcode(databaseConnection) & 0xff
 		return result == SQLITE_OK || result == SQLITE_ROW || result == SQLITE_DONE
 	}
 }
