@@ -288,6 +288,15 @@ extension Database {
 	public var errorMessage: String {
 		String(cString: sqlite3_errmsg(databaseConnection))
 	}
+
+	/// Returns the offset in the input SQL of the token referenced by the most recent error or `nil` if none
+	public var errorOffset: Int? {
+		let offset = sqlite3_error_offset(databaseConnection)
+		guard offset != -1 else {
+			return nil
+		}
+		return Int(offset)
+	}
 }
 
 extension Database {
