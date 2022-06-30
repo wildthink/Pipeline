@@ -51,8 +51,7 @@ extension Database {
 		/// Creates a new FTS5TokenizerCreator.
 		///
 		/// - parameter construct: A closure that creates the tokenizer
-		init(_ construct: @escaping (_ arguments: [String]) -> FTS5Tokenizer)
-		{
+		init(_ construct: @escaping (_ arguments: [String]) -> FTS5Tokenizer) {
 			self.construct = construct
 		}
 	}

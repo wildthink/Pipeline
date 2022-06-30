@@ -77,7 +77,7 @@ extension Row {
 	///
 	/// - returns: The column's value.
 	public func value<T: DatabaseSerializable>(forColumn index: Int) throws -> T {
-		return try T.deserialize(from: value(ofColumn: index))
+		try T.deserialize(from: value(ofColumn: index))
 	}
 
 	/// Returns the value of the column with name `name`.
@@ -88,7 +88,7 @@ extension Row {
 	///
 	/// - returns: The column's value.
 	public func value<T: DatabaseSerializable>(named name: String) throws -> T {
-		return try value(forColumn: statement.index(ofColumn: name))
+		try value(forColumn: statement.index(ofColumn: name))
 	}
 }
 
