@@ -114,6 +114,8 @@ public final class Statement {
 		for i in 0 ..< count {
 			if let s = sqlite3_column_name(preparedStatement, i) {
 				names.append(String(cString: s))
+			} else {
+				names.append("")
 			}
 		}
 		return names
@@ -125,10 +127,10 @@ public final class Statement {
 	///
 	/// - parameter index: The index of the desired column.
 	///
-	/// - throws: An error if `index` is out of bounds.
+	/// - throws: An error if `index` is out of bounds or an out-of-memory error occurs.
 	///
 	/// - returns: The name of the column for the specified index.
-	public func name(ofColumn index: Int) throws -> String {
+	public func nameOfColumn(_ index: Int) throws -> String {
 		guard let name = sqlite3_column_name(preparedStatement, Int32(index)) else {
 			throw DatabaseError(message: "Column index \(index) out of bounds")
 		}
@@ -147,14 +149,16 @@ public final class Statement {
 		return map
 	}()
 
-	/// Returns the index of the column `name`.
+	/// Returns the index of a column with `name`.
+	///
+	/// - note: Column names are not guaranteed to be unique.
 	///
 	/// - parameter name: The name of the desired column.
 	///
 	/// - throws: An error if the column doesn't exist.
 	///
-	/// - returns: The index of the column with the specified name.
-	public func index(ofColumn name: String) throws -> Int {
+	/// - returns: The index of a column with the specified name.
+	public func indexOfColumn(_ name: String) throws -> Int {
 		guard let index = columnNamesAndIndexes[name] else {
 			throw DatabaseError(message: "Unknown column \"\(name)\"")
 		}
@@ -214,7 +218,7 @@ extension Statement {
 	/// - returns: The next result row of returned data.
 	///
 	/// - throws: An error if the statement encountered an execution error.
-	public func nextRow() throws -> Row? {
+	public func step() throws -> Row? {
 		switch sqlite3_step(preparedStatement) {
 		case SQLITE_ROW:
 			return Row(statement: self)
@@ -288,7 +292,7 @@ extension Statement: IteratorProtocol {
 	///
 	/// - returns: The next result row of returned data.
 	public func next() -> Row? {
-		try? nextRow()
+		try? step()
 	}
 }
 
@@ -303,10 +307,10 @@ extension Statement {
 	/// - parameter index: The index of the desired column.
 	///
 	/// - throws: An error if `index` is out of bounds.
-	public func values(ofColumn index: Int) throws -> [DatabaseValue] {
+	public func column(_ index: Int) throws -> [DatabaseValue] {
 		var values = [DatabaseValue]()
 		try results { row in
-			values.append(try row.value(ofColumn: index))
+			values.append(try row.value(at: index))
 		}
 		return values
 	}
@@ -316,11 +320,11 @@ extension Statement {
 	/// - parameter name: The name of the desired column.
 	///
 	/// - throws: An error if the column `name` doesn't exist.
-	public func values(ofColumn name: String) throws -> [DatabaseValue] {
-		let index = try index(ofColumn: name)
+	public func column(_ name: String) throws -> [DatabaseValue] {
+		let index = try indexOfColumn(name)
 		var values = [DatabaseValue]()
 		try results { row in
-			values.append(try row.value(ofColumn: index))
+			values.append(try row.value(at: index))
 		}
 		return values
 	}
@@ -335,10 +339,10 @@ extension Statement {
 	/// - parameter indexes: The indexes of the desired columns.
 	///
 	/// - throws: An error if any element of `indexes` is out of bounds.
-	public func values<S: Collection>(ofColumns indexes: S) throws -> [[DatabaseValue]] where S.Element == Int {
+	public func columns<S: Collection>(_ indexes: S) throws -> [[DatabaseValue]] where S.Element == Int {
 		var values = [[DatabaseValue]](repeating: [], count: indexes.count)
 		for (n, x) in indexes.enumerated() {
-			values[n] = try self.values(ofColumn: x)
+			values[n] = try self.column(x)
 		}
 		return values
 	}
@@ -348,10 +352,10 @@ extension Statement {
 	/// - parameter names: The names of the desired columns.
 	///
 	/// - throws: An error if a column in `names` doesn't exist.
-	public func values<S: Collection>(ofColumns names: S) throws -> [String: [DatabaseValue]] where S.Element == String {
+	public func columns<S: Collection>(_ names: S) throws -> [String: [DatabaseValue]] where S.Element == String {
 		var values: [String: [DatabaseValue]] = [:]
 		for name in names {
-			values[name] = try self.values(ofColumn: name)
+			values[name] = try self.column(name)
 		}
 		return values
 	}
