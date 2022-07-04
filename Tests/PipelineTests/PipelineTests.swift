@@ -497,5 +497,4 @@ final class PipelineTests: XCTestCase {
 		}
 	}
 #endif
->>>>>>> c88a7fd13b5bbe861d34a3bfe79bdfa12bad8684
 }
