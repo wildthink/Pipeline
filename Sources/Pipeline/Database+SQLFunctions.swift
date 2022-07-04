@@ -153,7 +153,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum += i
 	///             default:
-	///                 throw Database.Error(message: "Only integer values supported")
+	///                 throw DatabaseError(message: "Only integer values supported")
 	///         }
 	///     }
 	///
@@ -221,7 +221,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum += i
 	///             default:
-	///                 throw Database.Error(message: "Only integer values supported")
+	///                 throw DatabaseError(message: "Only integer values supported")
 	///         }
 	///     }
 	///
@@ -231,7 +231,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum -= i
 	///             default:
-	///                 throw Database.Error(message: "Only integer values supported")
+	///                 throw DatabaseError(message: "Only integer values supported")
 	///         }
 	///     }
 	///
@@ -338,7 +338,7 @@ private func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: Databas
 		sqlite3_result_text(sqlite_context, t, -1, SQLiteTransientStorage)
 	case .blob(let b):
 		b.withUnsafeBytes {
-			sqlite3_result_blob(sqlite_context, $0.baseAddress, Int32(b.count), SQLiteTransientStorage)
+			sqlite3_result_blob(sqlite_context, $0.baseAddress, Int32($0.count), SQLiteTransientStorage)
 		}
 	case .null:
 		sqlite3_result_null(sqlite_context)
