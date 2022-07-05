@@ -51,7 +51,7 @@ extension Row {
 	///
 	/// - returns: The column's value as `type`.
 	public func value<T>(at index: Int, as type: T.Type = T.self, _ converter: ColumnValueConverter<T>) throws -> T {
-		guard try self.type(ofColumn: index) != .null else {
+		guard try self.typeOfColumn(index) != .null else {
 			throw DatabaseError(message: "SQL NULL encountered for column \(index)")
 		}
 		return try converter.convert(self, index)
@@ -70,7 +70,7 @@ extension Row {
 	///
 	/// - returns: The column's value as `type` or `nil` if null.
 	public func valueOrNil<T>(at index: Int, as type: T.Type = T.self, _ converter: ColumnValueConverter<T>) throws -> T? {
-		if try self.type(ofColumn: index) == .null {
+		if try self.typeOfColumn(index) == .null {
 			return nil
 		}
 		return try converter.convert(self, index)
@@ -369,7 +369,7 @@ extension ColumnValueConverter where T: Decodable {
 extension ColumnValueConverter where T == NSNumber {
 	/// Converts the signed integer or floating-point value of a column to `NSNumber`.
 	public static let nsNumber = ColumnValueConverter {
-		let type = try $0.type(ofColumn: $1)
+		let type = try $0.typeOfColumn($1)
 		switch type {
 		case .integer:
 			return NSNumber(value: try $0.integer(at: $1))
