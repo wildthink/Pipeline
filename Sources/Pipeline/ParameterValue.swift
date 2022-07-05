@@ -7,7 +7,7 @@
 import Foundation
 import CSQLite
 
-/// A struct responsible for binding a value to an SQL parameter.
+/// A struct responsible for binding a captured value to an SQL parameter.
 ///
 /// The implementation normally uses either `bind(integer:toParameter:)`, `bind(real:toParameter:)`,
 /// `bind(text:toParameter:)`, or`bind(blob:toParameter:)` but lower-level SQLite
@@ -24,7 +24,7 @@ import CSQLite
 /// 	}
 ///  ```
 public struct ParameterValue {
-	/// Binds a value to the SQL parameter at `index` in `statement`.
+	/// Binds a captured value to the SQL parameter at `index` in `statement`.
 	///
 	/// - parameter statement: A `Statement` object to receive the desired parameter.
 	/// - parameter index: The index of the SQL parameter to bind.
