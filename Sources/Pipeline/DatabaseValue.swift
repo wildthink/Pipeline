@@ -103,48 +103,6 @@ extension DatabaseValue: CustomStringConvertible {
 }
 
 extension DatabaseValue {
-	/// Creates a database value initialized to a signed integer value or null.
-	public init(_ value: Int64?) {
-		switch value {
-		case .none:
-			self = .null
-		case .some(let int64):
-			self = .integer(int64)
-		}
-	}
-
-	/// Creates a database value initialized to a floating-point value or null.
-	public init(_ value: Double?) {
-		switch value {
-		case .none:
-			self = .null
-		case .some(let double):
-			self = .real(double)
-		}
-	}
-
-	/// Creates a database value initialized to a text value or null.
-	public init(_ value: String?) {
-		switch value {
-		case .none:
-			self = .null
-		case .some(let string):
-			self = .text(string)
-		}
-	}
-
-	/// Creates a database value initialized to a BLOB value or null.
-	public init(_ value: Data?) {
-		switch value {
-		case .none:
-			self = .null
-		case .some(let data):
-			self = .blob(data)
-		}
-	}
-}
-
-extension DatabaseValue {
 	/// Creates and returns a database value containing a signed integer value.
 	public static func int(_ value: Int) -> DatabaseValue {
 		.integer(Int64(value))
