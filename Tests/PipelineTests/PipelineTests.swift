@@ -1069,12 +1069,11 @@ final class ShuffledSequenceModule: VirtualTableModule {
 		for argument in arguments.suffix(from: 3) {
 			let scanner = Scanner(string: argument)
 			scanner.charactersToBeSkipped = .whitespaces
-			var token: NSString? = nil
-			guard scanner.scanUpTo("=", into: &token) else {
+			guard let token = scanner.scanUpToString("=") else {
 				continue
 			}
 			if token == "count" {
-				guard scanner.scanString("=", into: nil) else {
+				guard scanner.scanString("=") != nil else {
 					throw SQLiteError(code: SQLITE_ERROR, details: "Missing value for count")
 				}
 				guard scanner.scanInt(&count), count > 0 else {
@@ -1082,7 +1081,7 @@ final class ShuffledSequenceModule: VirtualTableModule {
 				}
 			}
 			else if token == "start" {
-				guard scanner.scanString("=", into: nil) else {
+				guard scanner.scanString("=") != nil else {
 					throw SQLiteError(code: SQLITE_ERROR, details: "Missing value for start")
 				}
 				guard scanner.scanInt(&start) else {
