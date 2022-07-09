@@ -206,7 +206,7 @@ extension Statement {
 	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
 	///
 	/// - returns: `self`.
-	@discardableResult public func bind(_ value: Int64, toParameter name: String) throws -> Statement {
+	@discardableResult public func bind(integer value: Int64, toParameter name: String) throws -> Statement {
 		try bind(integer: value, toParameter: indexOfParameter(name))
 	}
 
@@ -218,7 +218,7 @@ extension Statement {
 	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
 	///
 	/// - returns: `self`.
-	@discardableResult public func bind(_ value: Double, toParameter name: String) throws -> Statement {
+	@discardableResult public func bind(real value: Double, toParameter name: String) throws -> Statement {
 		try bind(real: value, toParameter: indexOfParameter(name))
 	}
 
@@ -230,7 +230,7 @@ extension Statement {
 	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
 	///
 	/// - returns: `self`.
-	@discardableResult public func bind(_ value: String, toParameter name: String) throws -> Statement {
+	@discardableResult public func bind(text value: String, toParameter name: String) throws -> Statement {
 		try bind(text: value, toParameter: indexOfParameter(name))
 	}
 
@@ -242,7 +242,7 @@ extension Statement {
 	/// - throws: An error if the SQL parameter `name` doesn't exist or `value` couldn't be bound.
 	///
 	/// - returns: `self`.
-	@discardableResult public func bind(_ value: Data, toParameter name: String) throws -> Statement {
+	@discardableResult public func bind(blob value: Data, toParameter name: String) throws -> Statement {
 		try bind(blob: value, toParameter: indexOfParameter(name))
 	}
 
