@@ -83,25 +83,17 @@ extension SQLParameterBinder where T: Collection, T.Element == String {
 	}
 }
 
-/// Computes the accumulated result  of `seq`.
-private func accumulate<S: Sequence, U>(_ seq: S, _ initial: U, _ combine: (U, S.Element) -> U) -> [U] {
-	var result: [U] = []
-	result.reserveCapacity(seq.underestimatedCount)
-	var runningResult = initial
-	for element in seq {
-		runningResult = combine(runningResult, element)
-		result.append(runningResult)
-	}
-	return result
-}
-
-/// Computes the prefix sum of `seq`.
-private func scan<S: Sequence, U>(_ seq: S, _ initial: U, _ combine: (U, S.Element) -> U) -> [U] {
-	var result: [U] = []
-	result.reserveCapacity(seq.underestimatedCount)
-	var runningResult = initial
-	for element in seq {
-		runningResult = combine(runningResult, element)
+/// Computes and returns the prefix sum of a sequence.
+/// - parameter sequence: A sequence.
+/// - parameter initialResult: The value to use as the initial accumulating value. `initialResult` is passed to `nextPartialResult` the first time the closure is executed.
+/// - parameter nextPartialResult: A closure that combines an accumulating value and an element of the sequence into a new accumulating value, to be used in the next call of the `nextPartialResult` closure or returned to the caller.
+/// - returns: The prefix sum. If the sequence has no elements, the result is `initialResult`.
+private func scan<S, Result>(_ sequence: S, _ initialResult: Result, _ nextPartialResult: (Result, S.Element) -> Result) -> [Result] where S: Sequence {
+	var result: [Result] = []
+	result.reserveCapacity(sequence.underestimatedCount)
+	var runningResult = initialResult
+	for element in sequence {
+		runningResult = nextPartialResult(runningResult, element)
 		result.append(runningResult)
 	}
 	return result
