@@ -138,7 +138,7 @@ extension Database {
 			function_ptr.deinitialize(count: 1)
 			function_ptr.deallocate()
 		}) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error adding SQL scalar function \"\(name)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -153,7 +153,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum += i
 	///             default:
-	///                 throw DatabaseError(message: "Only integer values supported")
+	///                 throw DatabaseError("Only integer values supported")
 	///         }
 	///     }
 	///
@@ -206,7 +206,7 @@ extension Database {
 			context_ptr.deinitialize(count: 1)
 			context_ptr.deallocate()
 		}) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error adding SQL aggregate function \"\(name)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -221,7 +221,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum += i
 	///             default:
-	///                 throw DatabaseError(message: "Only integer values supported")
+	///                 throw DatabaseError("Only integer values supported")
 	///         }
 	///     }
 	///
@@ -231,7 +231,7 @@ extension Database {
 	///             case .integer(let i):
 	///                 sum -= i
 	///             default:
-	///                 throw DatabaseError(message: "Only integer values supported")
+	///                 throw DatabaseError("Only integer values supported")
 	///         }
 	///     }
 	///
@@ -307,7 +307,7 @@ extension Database {
 			context_ptr.deinitialize(count: 1)
 			context_ptr.deallocate()
 		}) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error adding SQL aggregate window function \"\(name)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -319,7 +319,7 @@ extension Database {
 	/// - throws: An error if the SQL function couldn't be removed.
 	public func removeFunction(_ name: String, arity: Int = -1) throws {
 		guard sqlite3_create_function_v2(databaseConnection, name, Int32(arity), SQLITE_UTF8, nil, nil, nil, nil, nil) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error removing SQL function \"\(name)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 }

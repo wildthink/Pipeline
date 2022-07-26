@@ -61,7 +61,7 @@ public final class Database {
 		let result = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil)
 		guard result == SQLITE_OK else {
 			_ = sqlite3_close(db)
-			throw SQLiteError(code: result)
+			throw SQLiteError("Error creating temporary database", code: result)
 		}
 		precondition(db != nil)
 		self.init(databaseConnection: db.unsafelyUnwrapped)
@@ -78,7 +78,7 @@ public final class Database {
 			let result = sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil)
 			guard result == SQLITE_OK else {
 				_ = sqlite3_close(db)
-				throw SQLiteError(code: result)
+				throw SQLiteError("Error opening database \(url)", code: result)
 			}
 		}
 		precondition(db != nil)
@@ -101,7 +101,7 @@ public final class Database {
 			let result = sqlite3_open_v2(path, &db, flags, nil)
 			guard result == SQLITE_OK else {
 				_ = sqlite3_close(db)
-				throw SQLiteError(code: result)
+				throw SQLiteError("Error opening database \(url)", code: result)
 			}
 		}
 		precondition(db != nil)
@@ -165,7 +165,7 @@ extension Database {
 	/// - returns: The name of the *n*th attached database.
 	public func name(ofDatabase n: Int32) throws -> String {
 		guard let name = sqlite3_db_name(databaseConnection, n) else {
-			throw DatabaseError(message: "The database at index \(n) does not exist")
+			throw DatabaseError("The database at index \(n) does not exist")
 		}
 		return String(cString: name)
 	}
@@ -181,7 +181,7 @@ extension Database {
 	/// - returns: The URL for the file associated with database `name`.
 	public func url(forDatabase name: String = "main") throws -> URL {
 		guard let path = sqlite3_db_filename(databaseConnection, name) else {
-			throw DatabaseError(message: "The database \"\(name)\" does not exist or is a temporary or in-memory database")
+			throw DatabaseError("The database \"\(name)\" does not exist or is a temporary or in-memory database")
 		}
 		return URL(fileURLWithPath: String(cString: path))
 	}
@@ -210,7 +210,7 @@ extension Database {
 	public func execute(sql: String) throws {
 		let result = sqlite3_exec(databaseConnection, sql, nil, nil, nil)
 		guard result == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error executing SQL \"\(sql)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -267,8 +267,7 @@ extension Database {
 			result = sqlite3_exec(databaseConnection, sql, nil, nil, &errmsg)
 		}
 		guard result == SQLITE_OK else {
-			let details = errmsg != nil ? String(bytesNoCopy: errmsg.unsafelyUnwrapped, length: strlen(errmsg.unsafelyUnwrapped), encoding: .utf8, freeWhenDone: true).unsafelyUnwrapped : nil
-			throw DatabaseError(message: "Error executing SQL", details: details)
+			throw SQLiteError("Error executing SQL \"\(sql)\"", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}	
 }

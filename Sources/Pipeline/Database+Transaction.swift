@@ -32,13 +32,16 @@ extension Database {
 	public func begin(type: TransactionType = .deferred) throws {
 		let sql: String
 		switch type {
-		case .deferred:		sql = "BEGIN DEFERRED TRANSACTION;"
-		case .immediate:	sql = "BEGIN IMMEDIATE TRANSACTION;"
-		case .exclusive:	sql = "BEGIN EXCLUSIVE TRANSACTION;"
+		case .deferred:
+			sql = "BEGIN DEFERRED TRANSACTION;"
+		case .immediate:
+			sql = "BEGIN IMMEDIATE TRANSACTION;"
+		case .exclusive:
+			sql = "BEGIN EXCLUSIVE TRANSACTION;"
 		}
 
 		guard sqlite3_exec(databaseConnection, sql, nil, nil, nil) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error beginning \(type) transaction", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -47,7 +50,7 @@ extension Database {
 	/// - throws: An error if the transaction couldn't be rolled back or there is no active transaction.
 	public func rollback() throws {
 		guard sqlite3_exec(databaseConnection, "ROLLBACK;", nil, nil, nil) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error rolling back", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -56,7 +59,7 @@ extension Database {
 	/// - throws: An error if the transaction couldn't be committed or there is no active transaction.
 	public func commit() throws {
 		guard sqlite3_exec(databaseConnection, "COMMIT;", nil, nil, nil) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error committing", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 

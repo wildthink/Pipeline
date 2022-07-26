@@ -235,7 +235,7 @@ extension Database {
 			busyHandler?.deinitialize(count: 1)
 			busyHandler?.deallocate()
 			busyHandler = nil
-			throw DatabaseError(message: "Error setting busy handler")
+			throw SQLiteError("Error setting busy handler")
 		}
 	}
 
@@ -249,7 +249,7 @@ extension Database {
 			busyHandler = nil
 		}
 		guard sqlite3_busy_handler(databaseConnection, nil, nil) == SQLITE_OK else {
-			throw SQLiteError(fromDatabaseConnection: databaseConnection)
+			throw SQLiteError("Error removing busy handler", takingErrorCodeFromDatabaseConnection: databaseConnection)
 		}
 	}
 
@@ -267,7 +267,7 @@ extension Database {
 			busyHandler = nil
 		}
 		guard sqlite3_busy_timeout(databaseConnection, Int32(ms)) == SQLITE_OK else {
-			throw DatabaseError(message: "Error setting busy timeout")
+			throw SQLiteError("Error setting busy timeout")
 		}
 	}
 }
@@ -329,11 +329,11 @@ extension Database {
 		/// - throws: An error if `index` is out of bounds or an other error occurs.
 		public func oldValue(at index: Int) throws -> DatabaseValue {
 			if case .insert(_) = changeType {
-				throw DatabaseError(message: "sqlite3_preupdate_old() is undefined for insertions")
+				throw DatabaseError("sqlite3_preupdate_old() is undefined for insertions")
 			}
 			var value: SQLiteValue?
 			guard sqlite3_preupdate_old(databaseConnection, Int32(index), &value) == SQLITE_OK else {
-				throw SQLiteError(fromDatabaseConnection: databaseConnection)
+				throw SQLiteError("Unable to retrieve old value at \(index) in pre-update hook", fromDatabaseConnection: databaseConnection)
 			}
 			return DatabaseValue(sqliteValue: value.unsafelyUnwrapped)
 		}
@@ -352,11 +352,11 @@ extension Database {
 		/// - throws: An error if `index` is out of bounds or an other error occurs.
 		public func newValue(at index: Int) throws -> DatabaseValue {
 			if case .delete(_) = changeType {
-				throw DatabaseError(message: "sqlite3_preupdate_new() is undefined for deletions")
+				throw DatabaseError("sqlite3_preupdate_new() is undefined for deletions")
 			}
 			var value: SQLiteValue?
 			guard sqlite3_preupdate_new(databaseConnection, Int32(index), &value) == SQLITE_OK else {
-				throw SQLiteError(fromDatabaseConnection: databaseConnection)
+				throw SQLiteError("Unable to retrieve new value at \(index) in pre-update hook", fromDatabaseConnection: databaseConnection)
 			}
 			return DatabaseValue(sqliteValue: value.unsafelyUnwrapped)
 		}
