@@ -595,8 +595,7 @@ final class PipelineTests: XCTestCase {
 				func next() {
 					if _isDescending {
 						_value -= _step
-					}
-					else {
+					} else {
 						_value += _step
 					}
 					_rowid += 1
@@ -650,8 +649,7 @@ final class PipelineTests: XCTestCase {
 				var eof: Bool {
 					if _isDescending {
 						return _value < _min
-					}
-					else {
+					} else {
 						return _value > _max
 					}
 				}
@@ -733,8 +731,7 @@ final class PipelineTests: XCTestCase {
 						}
 						indexInfo.orderByConsumed = 1
 					}
-				}
-				else {
+				} else {
 					indexInfo.estimatedRows = 2147483647
 				}
 
@@ -845,8 +842,7 @@ final class PipelineTests: XCTestCase {
 
 			do {
 				XCTAssertThrowsError(try change.oldValue(at: 0))
-			}
-			catch {}
+			} catch {}
 		}
 		try! db.execute(sql: "insert into t1(a) values (?);", parameters: ["skeleton"])
 
@@ -884,8 +880,7 @@ final class PipelineTests: XCTestCase {
 
 			do {
 				XCTAssertThrowsError(try change.newValue(at: 0))
-			}
-			catch {}
+			} catch {}
 		}
 		try! db.execute(sql: "delete from t1 where a='beta';")
 
@@ -1014,8 +1009,7 @@ final class PipelineTests: XCTestCase {
 					// Verify that the file no longer exists after the deletion.
 					XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
 				}
-			}
-			catch {
+			} catch {
 				// Treat any errors during file deletion as a test failure.
 				XCTFail("Error while deleting temporary file: \(error)")
 			}
