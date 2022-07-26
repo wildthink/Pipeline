@@ -180,9 +180,7 @@ extension Database {
 					guard result == SQLITE_OK else {
 						return result
 					}
-				}
-
-				catch {
+				} catch {
 					// The token was too large to fit in buf
 					guard let token = tokenizer.currentToken() else {
 						continue
