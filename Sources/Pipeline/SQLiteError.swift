@@ -55,7 +55,7 @@ extension SQLiteError {
 	///
 	/// - parameter message: A brief message describing the circumstances leading to the error.
 	/// - parameter code: An SQLite error code
-	init(_ message: String, code: Int32 = SQLITE_ERROR) {
+	public init(_ message: String, code: Int32 = SQLITE_ERROR) {
 		self.init(message: message, code: code, details: String(cString: sqlite3_errstr(code)))
 	}
 
