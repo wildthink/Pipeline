@@ -52,7 +52,7 @@ final class PipelineTests: XCTestCase {
 			XCTAssertNoThrow(try connection.execute(sql: "insert into t1 default values;"))
 		}
 
-		let count = try! connection.prepare(sql: "select count(*) from t1;").step()!.value(at: 0, .int)
+		let count = try! connection.prepare(sql: "select count(*) from t1;").step()!.get(.int, at: 0)
 		XCTAssertEqual(count, rowCount)
 	}
 
@@ -103,7 +103,7 @@ final class PipelineTests: XCTestCase {
 
 		for row in s {
 			for _ in row {
-				XCTAssert(try! row.value(at: 0, .int) == count)
+				XCTAssert(try! row.get(.int, at: 0) == count)
 			}
 			count += 1
 		}
@@ -153,7 +153,7 @@ final class PipelineTests: XCTestCase {
 
 		try! connection.prepare(sql: "insert into t1(a) values (?);").bind(.json(a), toParameter: 1).execute()
 
-		let b = try! connection.prepare(sql: "select * from t1 limit 1;").step()!.value(at: 0, .json(TestStruct.self))
+		let b = try! connection.prepare(sql: "select * from t1 limit 1;").step()!.get(.json(TestStruct.self), at: 0)
 
 		XCTAssertEqual(a.a, b.a)
 		XCTAssertEqual(a.b, b.b)
@@ -178,7 +178,7 @@ final class PipelineTests: XCTestCase {
 		var str = ""
 		let s = try! connection.prepare(sql: "select * from t1 order by a collate reversed;")
 		try! s.results { row in
-			let c = try row.value(at: 0, .string)
+			let c = try row.get(.string, at: 0)
 			str.append(c)
 		}
 
@@ -217,7 +217,7 @@ final class PipelineTests: XCTestCase {
 		try! connection.execute(sql: "insert into t1(a) values (?);", parameters: "test")
 
 		let s = try! connection.prepare(sql: "select rot13(a) from t1;")
-		let results = s.map { try! $0.value(at: 0, .string) }
+		let results = s.map { try! $0.get(.string, at: 0) }
 
 		XCTAssertEqual(results, ["guvf", "vf", "bayl", "n", "grfg"])
 
@@ -257,10 +257,10 @@ final class PipelineTests: XCTestCase {
 			try! connection.execute(sql: "insert into t1(a) values (?);", parameters: [.int(i)])
 		}
 
-		let s = try! connection.prepare(sql: "select integer_sum(a) from t1;").step()!.value(at: 0, .int64)
+		let s = try! connection.prepare(sql: "select integer_sum(a) from t1;").step()!.get(.int64, at: 0)
 		XCTAssertEqual(s, 45)
 
-		let ss = try! connection.prepare(sql: "select integer_sum(a) from t1;").step()!.value(at: 0, .int64)
+		let ss = try! connection.prepare(sql: "select integer_sum(a) from t1;").step()!.get(.int64, at: 0)
 		XCTAssertEqual(ss, 45)
 
 		try! connection.removeFunction("integer_sum", arity: 1)
@@ -314,7 +314,7 @@ final class PipelineTests: XCTestCase {
 		}
 
 		let s = try! connection.prepare(sql: "select integer_sum(a) OVER (ORDER BY a ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) from t1;")
-		let results = s.map { try! $0.value(at: 0, .int64) }
+		let results = s.map { try! $0.get(.int64, at: 0) }
 
 		XCTAssertEqual(results, [1, 3, 6, 9, 12, 15, 18, 21, 24, 17])
 
@@ -382,12 +382,12 @@ final class PipelineTests: XCTestCase {
 		try! connection.prepare(sql: "insert into t1(a) values (?);").bind("lazy dog").execute()
 
 		let s = try! connection.prepare(sql: "select count(*) from t1 where t1 match 'o*';")
-		let count = try! s.step()!.value(at: 0, .int)
+		let count = try! s.step()!.get(.int, at: 0)
 		XCTAssertEqual(count, 2)
 
 		let statement = try! connection.prepare(sql: "select * from t1 where t1 match 'o*';")
 		try! statement.results { row in
-			let s = try row.value(at: 0, .string)
+			let s = try row.get(.string, at: 0)
 			XCTAssert(s.starts(with: "jumps over"))
 		}
 	}
@@ -405,8 +405,8 @@ final class PipelineTests: XCTestCase {
 		try! statement.bind(integer: Int64(5), toParameter: 1)
 
 		try! statement.results { row in
-			let x = try row.value(at: 0, .int)
-			let y = try row.valueOrNil(named: "b", .int)
+			let x = try row.get(.int, at: 0)
+			let y = try row.optional(.int, named: "b")
 
 			XCTAssertEqual(x, 5)
 			XCTAssertEqual(y, nil)
@@ -426,8 +426,8 @@ final class PipelineTests: XCTestCase {
 		try! statement.bind(integer: Int64(5), toParameter: 1)
 
 		try! statement.results { row in
-			let x = try row.value(at: 0, .int)
-			let y = try row.valueOrNil(named: "b", .int)
+			let x = try row.get(.int, at: 0)
+			let y = try row.optional(.int, named: "b")
 
 			XCTAssertEqual(x, 5)
 			XCTAssertEqual(y, nil)
@@ -447,8 +447,8 @@ final class PipelineTests: XCTestCase {
 		try! statement.bind(integer: Int64(5), toParameter: ":a")
 
 		try! statement.results { row in
-			let x = try row.value(at: 0, .int)
-			let y = try row.valueOrNil(at: 1, .int)
+			let x = try row.get(.int, at: 0)
+			let y = try row.optional(.int, at: 1)
 
 			XCTAssertEqual(x, 5)
 			XCTAssertEqual(y, nil)
@@ -780,7 +780,7 @@ final class PipelineTests: XCTestCase {
 		try! connection.execute(sql: "CREATE VIRTUAL TABLE temp.shuffled USING shuffled_sequence(count=5);")
 		var statement = try! connection.prepare(sql: "SELECT value FROM shuffled;")
 
-		var results: [Int] = statement.map({try! $0.value(at: 0, .int)})
+		var results: [Int] = statement.map({try! $0.get(.int, at: 0)})
 		// Probability of the shuffled sequence being the same as the original is 1/5! = 1/120 = 8% (?) so this isn't a good check
 		//		XCTAssertNotEqual(results, [1,2,3,4,5])
 		XCTAssertEqual(results.sorted(), [1,2,3,4,5])
@@ -788,7 +788,7 @@ final class PipelineTests: XCTestCase {
 		try! connection.execute(sql: "CREATE VIRTUAL TABLE temp.shuffled2 USING shuffled_sequence(start=10,count=5);")
 		statement = try! connection.prepare(sql: "SELECT value FROM shuffled2;")
 
-		results = statement.map({try! $0.value(at: 0, .int)})
+		results = statement.map({try! $0.get(.int, at: 0)})
 //		XCTAssertNotEqual(results, [10,11,12,13,14])
 		XCTAssertEqual(results.sorted(), [10,11,12,13,14])
 	}
@@ -802,7 +802,7 @@ final class PipelineTests: XCTestCase {
 		try! connection1.execute(sql: "CREATE VIRTUAL TABLE shuffled USING shuffled_sequence(count=5);")
 		var statement = try! connection1.prepare(sql: "SELECT value FROM shuffled;")
 
-		var results: [Int] = statement.map({try! $0.value(at: 0, .int)})
+		var results: [Int] = statement.map({try! $0.get(.int, at: 0)})
 		XCTAssertEqual(results.sorted(), [1,2,3,4,5])
 
 		let connection2 = try! Connection(url: tempURL)
@@ -811,7 +811,7 @@ final class PipelineTests: XCTestCase {
 
 		statement = try! connection2.prepare(sql: "SELECT value FROM shuffled;")
 
-		results = statement.map({try! $0.value(at: 0, .int)})
+		results = statement.map({try! $0.get(.int, at: 0)})
 		XCTAssertEqual(results.sorted(), [1,2,3,4,5])
 	}
 
@@ -926,7 +926,7 @@ final class PipelineTests: XCTestCase {
 				.abort
 		}
 
-		let count: Int = try! connection2.prepare(sql: "select count(*) from birds;").step()!.value(at: 0, .int)
+		let count: Int = try! connection2.prepare(sql: "select count(*) from birds;").step()!.get(.int, at: 0)
 		XCTAssert(count == 0)
 	}
 
@@ -996,7 +996,7 @@ final class PipelineTests: XCTestCase {
 		}
 
 		let uuidConverter = RowConverter {
-			UUIDHolder(u: try $0.value(at: 0, .uuidWithString))
+			UUIDHolder(u: try $0.get(.uuidWithString, at: 0))
 		}
 
 		let expectation = self.expectation(description: "uuids")
