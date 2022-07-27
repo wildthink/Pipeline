@@ -38,11 +38,11 @@ import Foundation
 /// ```swift
 /// try connection.first(.person)
 /// ```
-struct TableMapper<T> {
+public struct TableMapper<T> {
 	/// The name of the table.
-	let table: String
+	public let table: String
 	/// A row converter for converting result rows to `T`.
-	let converter: RowConverter<T>
+	public let converter: RowConverter<T>
 }
 
 extension Connection {
@@ -56,7 +56,7 @@ extension Connection {
 	/// - throws: An error if the SQL could not be compiled or executed, or if initialization fails.
 	///
 	/// - returns: All rows in `mapper.table` as `type`.
-	func all<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>) throws -> [T] {
+	public func all<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>) throws -> [T] {
 		try all(as: type, mapper.converter, from: mapper.table)
 	}
 
@@ -70,7 +70,7 @@ extension Connection {
 	/// - throws: An error if the SQL could not be compiled or executed, or if initialization fails.
 	///
 	/// - returns: The first row in `mapper.table` as `type`.
-	func first<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>) throws -> T? {
+	public func first<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>) throws -> T? {
 		try first(as: type, mapper.converter, from: mapper.table)
 	}
 
@@ -88,7 +88,7 @@ extension Connection {
 	/// - returns: The matching rows in `mapper.table` as `type`.
 	///
 	/// - seealso: [expr](http://sqlite.org/syntax/expr.html)
-	func find<T, C: Collection>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: C) throws -> [T] where C.Element == SQLParameter {
+	public func find<T, C: Collection>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: C) throws -> [T] where C.Element == SQLParameter {
 		try find(as: type, mapper.converter, from: mapper.table, where: expression, parameters: parameters)
 	}
 
@@ -106,7 +106,7 @@ extension Connection {
 	/// - returns: The matching rows in `mapper.table` as `type`.
 	///
 	/// - seealso: [expr](http://sqlite.org/syntax/expr.html)
-	func find<T, C: Collection>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: C) throws -> [T] where C.Element == (key: String, value: SQLParameter) {
+	public func find<T, C: Collection>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: C) throws -> [T] where C.Element == (key: String, value: SQLParameter) {
 		try find(as: type, mapper.converter, from: mapper.table, where: expression, parameters: parameters)
 	}
 }
@@ -126,7 +126,7 @@ extension Connection {
 	/// - returns: The matching rows in `mapper.table` as `type`.
 	///
 	/// - seealso: [expr](http://sqlite.org/syntax/expr.html)
-	func find<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: SQLParameter...) throws -> [T] {
+	public func find<T>(as type: T.Type = T.self, _ mapper: TableMapper<T>, `where` expression: String, parameters: SQLParameter...) throws -> [T] {
 		try find(as: type, mapper.converter, from: mapper.table, where: expression, parameters: parameters)
 	}
 }
