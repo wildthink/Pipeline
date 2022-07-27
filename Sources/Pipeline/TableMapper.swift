@@ -43,6 +43,15 @@ public struct TableMapper<T> {
 	public let table: String
 	/// A row converter for converting result rows to `T`.
 	public let converter: RowConverter<T>
+
+	/// Creates a new table mapper.
+	///
+	/// - parameter name: The name of the table.
+	/// - parameter converter: A row converter object.
+	public init(table: String, converter: RowConverter<T>) {
+		self.table = table
+		self.converter = converter
+	}
 }
 
 extension Connection {

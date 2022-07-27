@@ -36,6 +36,15 @@ public struct ColumnValueConverter<T> {
 	///
 	/// - throws: An error if the type conversion could not be accomplished.
 	public let convert: (_ row: Row, _ index: Int) throws -> T
+
+	/// Creates a new column value converter.
+	///
+	/// - parameter convert: A closure converting the value at `index` in `row` to `T`.
+	/// - parameter row: A `Row` object containing the desired value.
+	/// - parameter index: The index of the desired column.
+	public init(convert: @escaping (_ row: Row, _ index: Int) throws -> T) {
+		self.convert = convert
+	}
 }
 
 extension Row {

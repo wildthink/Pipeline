@@ -41,6 +41,14 @@ public struct RowConverter<T> {
 	///
 	/// - throws: An error if the type conversion could not be accomplished.
 	public let convert: (_ row: Row) throws -> T
+
+	/// Creates a new row converter.
+	///
+	/// - parameter convert: A closure converting `row` to `T`.
+	/// - parameter row: A `Row` object.
+	public init(convert: @escaping (_ row: Row) throws -> T) {
+		self.convert = convert
+	}
 }
 
 extension Statement {
