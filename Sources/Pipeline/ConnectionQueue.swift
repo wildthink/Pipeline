@@ -28,7 +28,7 @@ import CSQLite
 /// A connection queue also supports transactions and savepoints:
 ///
 /// ```swift
-/// connectionQueue.transaction { connection in
+/// let result = try connectionQueue.transaction { connection in
 ///     // All database operations here are contained within a transaction
 ///     return .commit
 /// }
