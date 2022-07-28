@@ -16,16 +16,6 @@ import Combine
 /// - seealso: [Database Connection Handle](https://sqlite.org/c3ref/sqlite3.html)
 public typealias SQLiteDatabaseConnection = OpaquePointer
 
-/// The content pointer is constant and will never change.
-///
-/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
-public let SQLiteStaticStorage = unsafeBitCast(0, to: sqlite3_destructor_type.self)
-
-/// The content will likely change in the near future and that SQLite should make its own private copy of the content before returning.
-///
-/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
-public let SQLiteTransientStorage = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-
 /// A connection to an [SQLite](https://sqlite.org) database.
 public final class Connection {
 	/// The underlying `sqlite3 *` connection handle.
