@@ -335,10 +335,10 @@ func set_sqlite3_result(_ sqlite_context: OpaquePointer!, value: DatabaseValue) 
 	case .real(let r):
 		sqlite3_result_double(sqlite_context, r)
 	case .text(let t):
-		sqlite3_result_text(sqlite_context, t, -1, SQLiteTransientStorage)
+		sqlite3_result_text(sqlite_context, t, -1, SQLite.transientStorage)
 	case .blob(let b):
 		b.withUnsafeBytes {
-			sqlite3_result_blob(sqlite_context, $0.baseAddress, Int32($0.count), SQLiteTransientStorage)
+			sqlite3_result_blob(sqlite_context, $0.baseAddress, Int32($0.count), SQLite.transientStorage)
 		}
 	case .null:
 		sqlite3_result_null(sqlite_context)

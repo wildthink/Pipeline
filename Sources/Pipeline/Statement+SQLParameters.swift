@@ -76,13 +76,13 @@ extension Statement {
 			}
 		case .text(let t):
 			try t.withCString {
-				guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLiteTransientStorage) == SQLITE_OK else {
+				guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLite.transientStorage) == SQLITE_OK else {
 					throw SQLiteError("Error binding String \"\(t)\" to parameter \(index)", takingErrorCodeFromDatabaseConnection: connection.databaseConnection)
 				}
 			}
 		case .blob(let b):
 			try b.withUnsafeBytes {
-				guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32($0.count), SQLiteTransientStorage) == SQLITE_OK else {
+				guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32($0.count), SQLite.transientStorage) == SQLITE_OK else {
 					throw SQLiteError("Error binding Data to parameter \(index)", takingErrorCodeFromDatabaseConnection: connection.databaseConnection)
 				}
 			}
@@ -154,7 +154,7 @@ extension Statement {
 	/// - returns: `self`.
 	@discardableResult public func bind(text value: String, toParameter index: Int) throws -> Statement {
 		try value.withCString {
-			guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLiteTransientStorage) == SQLITE_OK else {
+			guard sqlite3_bind_text(preparedStatement, Int32(index), $0, -1, SQLite.transientStorage) == SQLITE_OK else {
 				throw SQLiteError("Error binding String \(value) to parameter \(index)", takingErrorCodeFromDatabaseConnection: connection.databaseConnection)
 			}
 		}
@@ -173,7 +173,7 @@ extension Statement {
 	/// - returns: `self`.
 	@discardableResult public func bind(blob value: Data, toParameter index: Int) throws -> Statement {
 		try value.withUnsafeBytes {
-			guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32($0.count), SQLiteTransientStorage) == SQLITE_OK else {
+			guard sqlite3_bind_blob(preparedStatement, Int32(index), $0.baseAddress, Int32($0.count), SQLite.transientStorage) == SQLITE_OK else {
 				throw SQLiteError("Error binding Data to parameter \(index)", takingErrorCodeFromDatabaseConnection: connection.databaseConnection)
 			}
 		}

@@ -7,16 +7,6 @@
 import Foundation
 import CSQLite
 
-/// The content pointer is constant and will never change.
-///
-/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
-public let SQLiteStaticStorage = unsafeBitCast(0, to: sqlite3_destructor_type.self)
-
-/// The content will likely change in the near future and that SQLite should make its own private copy of the content before returning.
-///
-/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
-public let SQLiteTransientStorage = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-
 /// SQLite library information.
 public struct SQLite {
 	/// The version of SQLite in the format *X.Y.Z*, for example `3.37.2`.
@@ -142,4 +132,14 @@ public struct SQLite {
 	public static func compileOptionUsed(_ option: String) -> Bool {
 		sqlite3_compileoption_used(option) != 0
 	}
+
+	/// The content pointer is constant and will never change.
+	///
+	/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
+	public static let staticStorage = unsafeBitCast(0, to: sqlite3_destructor_type.self)
+
+	/// The content will likely change in the near future and that SQLite should make its own private copy of the content before returning.
+	///
+	/// - seealso: [Constants Defining Special Destructor Behavior](https://sqlite.org/c3ref/c_static.html)
+	public static let transientStorage = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 }
