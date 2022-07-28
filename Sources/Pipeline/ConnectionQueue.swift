@@ -4,7 +4,6 @@
 // MIT license
 //
 
-import os.log
 import Foundation
 import CSQLite
 
@@ -92,15 +91,26 @@ public final class ConnectionQueue {
 		}
 	}
 
+	/// A block called with the result of an asynchronous database operation.
+	///
+	/// - parameter result: A `Result` object containing the result of the operation.
+	public typealias CompletionHandler<T> = (_ result: Result<T, Error>) -> Void
+
 	/// Submits an asynchronous operation to the queue.
 	///
 	/// - parameter group: An optional `DispatchGroup` with which to associate `block`.
 	/// - parameter qos: The quality of service for `block`.
 	/// - parameter block: A closure performing the database operation.
 	/// - parameter connection: A `Connection` used for database access within `block`.
-	public func async(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping (_ connection: Connection) -> (Void)) {
+	/// - parameter completion: A closure called with the result of the operation.
+	public func async(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping (_ connection: Connection) throws -> Void, completion: @escaping CompletionHandler<Void>) {
 		queue.async(group: group, qos: qos) {
-			block(self.connection)
+			do {
+				try block(self.connection)
+				completion(.success(()))
+			} catch let error {
+				completion(.failure(error))
+			}
 		}
 	}
 
@@ -111,10 +121,12 @@ public final class ConnectionQueue {
 	///
 	/// - throws: Any error thrown in `block` or an error if the transaction could not be started, rolled back, or committed.
 	///
+	/// - returns: The result of the transaction.
+	///
 	/// - note: If `block` throws an error the transaction will be rolled back and the error will be re-thrown.
 	/// - note: If an error occurs committing the transaction a rollback will be attempted and the error will be re-thrown.
-	public func transaction(type: Connection.TransactionType = .deferred, _ block: Connection.TransactionBlock) throws {
-		try queue.sync {
+	public func transaction(type: Connection.TransactionType = .deferred, _ block: Connection.TransactionBlock) throws -> Connection.TransactionCompletion {
+		return try queue.sync {
 			try connection.transaction(type: type, block)
 		}
 	}
@@ -125,12 +137,14 @@ public final class ConnectionQueue {
 	/// - parameter group: An optional `DispatchGroup` with which to associate `block`.
 	/// - parameter qos: The quality of service for `block`.
 	/// - parameter block: A closure performing the database operation.
-	public func asyncTransaction(type: Connection.TransactionType = .deferred, group: DispatchGroup? = nil, qos: DispatchQoS = .default, _ block: @escaping Connection.TransactionBlock) {
+	/// - parameter completion: A closure called with the result of the transaction.
+	public func asyncTransaction(type: Connection.TransactionType = .deferred, group: DispatchGroup? = nil, qos: DispatchQoS = .default, _ block: @escaping Connection.TransactionBlock, completion: @escaping CompletionHandler<Connection.TransactionCompletion>) {
 		queue.async(group: group, qos: qos) {
 			do {
-				try self.connection.transaction(type: type, block)
+				let result = try self.connection.transaction(type: type, block)
+				completion(.success(result))
 			} catch let error {
-				os_log("Error performing database transaction: %{public}@", type: .info, error.localizedDescription)
+				completion(.failure(error))
 			}
 		}
 	}
@@ -141,10 +155,12 @@ public final class ConnectionQueue {
 	///
 	/// - throws: Any error thrown in `block` or an error if the savepoint could not be started, rolled back, or released.
 	///
+	/// - returns: The result of the savepoint.
+	///
 	/// - note: If `block` throws an error the savepoint will be rolled back and the error will be re-thrown.
 	/// - note: If an error occurs releasing the savepoint a rollback will be attempted and the error will be re-thrown.
-	public func savepoint(block: Connection.SavepointBlock) throws {
-		try queue.sync {
+	public func savepoint(block: Connection.SavepointBlock) throws -> Connection.SavepointCompletion {
+		return try queue.sync {
 			try connection.savepoint(block: block)
 		}
 	}
@@ -154,12 +170,14 @@ public final class ConnectionQueue {
 	/// - parameter group: An optional `DispatchGroup` with which to associate `block`.
 	/// - parameter qos: The quality of service for `block`.
 	/// - parameter block: A closure performing the database operation.
-	public func asyncSavepoint(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping Connection.SavepointBlock) {
+	/// - parameter completion: A closure called with the result of the savepoint.
+	public func asyncSavepoint(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping Connection.SavepointBlock, completion: @escaping CompletionHandler<Connection.SavepointCompletion>) {
 		queue.async(group: group, qos: qos) {
 			do {
-				try self.connection.savepoint(block: block)
+				let result = try self.connection.savepoint(block: block)
+				completion(.success(result))
 			} catch let error {
-				os_log("Error performing database savepoint: %{public}@", type: .info, error.localizedDescription)
+				completion(.failure(error))
 			}
 		}
 	}

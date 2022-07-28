@@ -4,7 +4,6 @@
 // MIT license
 //
 
-import os.log
 import Foundation
 import CSQLite
 
@@ -99,15 +98,26 @@ public final class ConnectionReadQueue {
 		}
 	}
 
+	/// A block called with the result of an asynchronous database operation.
+	///
+	/// - parameter result: A `Result` object containing the result of the operation.
+	public typealias CompletionHandler = (_ result: Result<Void, Error>) -> Void
+
 	/// Submits an asynchronous read operation to the queue.
 	///
 	/// - parameter group: An optional `DispatchGroup` with which to associate `block`.
 	/// - parameter qos: The quality of service for `block`.
 	/// - parameter block: A closure performing the database operation.
 	/// - parameter connection: A `Connection` used for database access within `block`.
-	public func async(group: DispatchGroup? = nil, qos: DispatchQoS = .unspecified, block: @escaping (_ connection: Connection) -> (Void)) {
+	/// - parameter completion: A closure called with the result of the operation.
+	public func async(group: DispatchGroup? = nil, qos: DispatchQoS = .unspecified, block: @escaping (_ connection: Connection) throws -> Void, completion: @escaping CompletionHandler) {
 		queue.async(group: group, qos: qos) {
-			block(self.connection)
+			do {
+				try block(self.connection)
+				completion(.success(()))
+			} catch let error {
+				completion(.failure(error))
+			}
 		}
 	}
 
@@ -119,7 +129,7 @@ public final class ConnectionReadQueue {
 	/// - throws: Any error thrown in `block` or an error if the transaction could not be started or rolled back.
 	///
 	/// - note: If `block` throws an error the transaction will be rolled back and the error will be re-thrown.
-	public func readTransaction(_ block: (_ connection: Connection) throws -> (Void)) throws {
+	public func readTransaction(_ block: (_ connection: Connection) throws -> Void) throws {
 		try queue.sync {
 			try connection.readTransaction(block)
 		}
@@ -131,12 +141,14 @@ public final class ConnectionReadQueue {
 	/// - parameter qos: The quality of service for `block`
 	/// - parameter block: A closure performing the database operation
 	/// - parameter connection: A `Connection` used for database access within `block`.
-	public func asyncReadTransaction(group: DispatchGroup? = nil, qos: DispatchQoS = .default, _ block: @escaping (_ connection: Connection) -> (Void)) {
+	/// - parameter completion: A closure called with the result of the read transaction.
+	public func asyncReadTransaction(group: DispatchGroup? = nil, qos: DispatchQoS = .default, _ block: @escaping (_ connection: Connection) -> Void, completion: @escaping CompletionHandler) {
 		queue.async(group: group, qos: qos) {
 			do {
 				try self.connection.readTransaction(block)
+				completion(.success(()))
 			} catch let error {
-				os_log("Error performing database read transaction: %{public}@", type: .info, error.localizedDescription)
+				completion(.failure(error))
 			}
 		}
 	}
@@ -210,7 +222,7 @@ extension Connection {
 	/// - throws: Any error thrown in `block` or an error if the transaction could not be started or rolled back.
 	///
 	/// - note: If `block` throws an error the transaction will be rolled back and the error will be re-thrown.
-	public func readTransaction(_ block: (_ connection: Connection) throws -> (Void)) throws {
+	public func readTransaction(_ block: (_ connection: Connection) throws -> Void) throws {
 		try begin(type: .deferred)
 		do {
 			try block(self)
