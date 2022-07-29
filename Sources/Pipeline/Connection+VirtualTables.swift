@@ -438,8 +438,10 @@ private func xBestIndex(_ pVTab: UnsafeMutablePointer<sqlite3_vtab>?, _ pIdxInfo
 		do {
 			let result = try virtualTable.bestIndex(&pIdxInfo.unsafelyUnwrapped.pointee)
 			switch result {
-			case .ok: 			return SQLITE_OK
-			case .constraint: 	return SQLITE_CONSTRAINT
+			case .ok:
+				return SQLITE_OK
+			case .constraint:
+				return SQLITE_CONSTRAINT
 			}
 		} catch let error as SQLiteError {
 			os_log("Error in bestIndex(): %{public}@", type: .info, error.description)
@@ -503,7 +505,7 @@ private func xClose(_ pCursor: UnsafeMutablePointer<sqlite3_vtab_cursor>?) -> In
 
 private func xFilter(_ pCursor: UnsafeMutablePointer<sqlite3_vtab_cursor>?, _ idxNum: Int32, _ idxStr: UnsafePointer<Int8>?, _ argc: Int32, _ argv: UnsafeMutablePointer<OpaquePointer?>?) -> Int32 {
 	let args = UnsafeBufferPointer(start: argv, count: Int(argc))
-	let arguments = args.map { DatabaseValue(sqliteValue: $0.unsafelyUnwrapped) }
+	let arguments = args.map { DatabaseValue($0.unsafelyUnwrapped) }
 
 	return pCursor.unsafelyUnwrapped.withMemoryRebound(to: cpipeline_sqlite3_vtab_cursor.self, capacity: 1) { curs -> Int32 in
 		let cursor = Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(curs.pointee.virtual_table_cursor_ptr.unsafelyUnwrapped)).takeUnretainedValue() as! VirtualTableCursor
