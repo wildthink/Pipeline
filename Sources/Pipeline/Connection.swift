@@ -4,6 +4,7 @@
 // MIT license
 //
 
+import os.log
 import Foundation
 import CSQLite
 
@@ -34,7 +35,18 @@ public final class Connection {
 	}
 
 	deinit {
-		_ = sqlite3_close(databaseConnection)
+		let result = sqlite3_close(databaseConnection)
+		if result != SQLITE_OK  {
+			if result == SQLITE_BUSY {
+				var preparedStatement: SQLitePreparedStatement? = sqlite3_next_stmt(databaseConnection, nil)
+				while preparedStatement != nil {
+					os_log(.info, "Statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
+					preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
+				}
+			} else {
+				os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
+			}
+		}
 //		_ = sqlite3_close_v2(databaseConnection)
 		busyHandler?.deinitialize(count: 1)
 		busyHandler?.deallocate()
