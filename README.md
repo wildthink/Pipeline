@@ -234,15 +234,16 @@ let statement = try connection.prepare(sql: "SELECT * FROM t1 ORDER BY a COLLATE
 Pipeline provides a Combine publisher for SQLite query results, allowing you to write elegant and powerful data processing code.
 
 ```swift
+// CREATE TABLE event(description TEXT NOT NULL, date REAL NOT NULL);
 struct Event {
-    let what: String
-    let when: Double
+    let description: String
+    let date: Date
 }
 
 let eventConverter = RowConverter<Event> { row in
-    let what = try row.text(at: 0)
-    let when = try row.real(at: 1)
-    return Event(what: what, when: when)
+    let description = try row.text(at: 0)
+    let date = try row.get(.timeIntervalSinceReferenceDate, at: 1)
+    return Event(description: description, date: date)
 }
 
 let connection = try Connection()
