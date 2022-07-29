@@ -241,10 +241,8 @@ extension Connection {
 
 				var row = [String: String]()
 				for i in 0 ..< Int(count) {
-					let raw_value = values[i].unsafelyUnwrapped
-					let value = String(bytesNoCopy: raw_value, length: strlen(raw_value), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
-					let raw_name = names[i].unsafelyUnwrapped
-					let name = String(bytesNoCopy: raw_name, length: strlen(raw_name), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
+					let value = String(cString: values[i].unsafelyUnwrapped)
+					let name = String(cString: names[i].unsafelyUnwrapped)
 					row[name] = value
 				}
 
