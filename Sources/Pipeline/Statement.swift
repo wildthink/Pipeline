@@ -4,6 +4,7 @@
 // MIT license
 //
 
+import os.log
 import Foundation
 import CSQLite
 
@@ -75,7 +76,10 @@ public final class Statement {
 	}
 
 	deinit {
-		_ = sqlite3_finalize(preparedStatement)
+		let result = sqlite3_finalize(preparedStatement)
+		if result != SQLITE_OK  {
+			os_log(.info, "Error finalizing prepared statement: %{public}@ [%d]", sqlite3_errstr(result), result)
+		}
 	}
 
 	/// Creates a compiled SQL statement.
