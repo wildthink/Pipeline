@@ -4,6 +4,7 @@
 // MIT license
 //
 
+import os.log
 import Foundation
 import CSQLite
 
@@ -45,7 +46,10 @@ public final class BLOB {
 	}
 
 	deinit {
-		_ = sqlite3_blob_close(blob);
+		let result = sqlite3_blob_close(blob);
+		if result != SQLITE_OK  {
+			os_log(.info, "Error closing BLOB: %{public}@ [%d]", sqlite3_errstr(result), result)
+		}
 	}
 
 	/// The length of the BLOB in bytes.
