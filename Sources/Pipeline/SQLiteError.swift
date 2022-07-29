@@ -42,6 +42,7 @@ extension SQLiteError {
 	public var primaryCode: Int32 {
 		code & 0xff
 	}
+
 	/// The extended error code.
 	public var extendedCode: Int32 {
 		code >> 8
