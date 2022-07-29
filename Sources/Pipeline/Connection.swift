@@ -40,7 +40,7 @@ public final class Connection {
 			if result == SQLITE_BUSY {
 				var preparedStatement: SQLitePreparedStatement? = sqlite3_next_stmt(databaseConnection, nil)
 				while preparedStatement != nil {
-					os_log(.info, "Statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
+					os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
 					preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
 				}
 			} else {
