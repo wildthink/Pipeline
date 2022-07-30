@@ -125,7 +125,7 @@ public final class ConnectionQueue {
 	///
 	/// - note: If `block` throws an error the transaction will be rolled back and the error will be re-thrown.
 	/// - note: If an error occurs committing the transaction a rollback will be attempted and the error will be re-thrown.
-	public func transaction(type: TransactionType = .deferred, _ block: Connection.TransactionBlock) throws -> Connection.TransactionCompletion {
+	@discardableResult public func transaction(type: TransactionType = .deferred, _ block: Connection.TransactionBlock) throws -> Connection.TransactionCompletion {
 		return try queue.sync {
 			try connection.transaction(type: type, block)
 		}
@@ -159,7 +159,7 @@ public final class ConnectionQueue {
 	///
 	/// - note: If `block` throws an error the savepoint will be rolled back and the error will be re-thrown.
 	/// - note: If an error occurs releasing the savepoint a rollback will be attempted and the error will be re-thrown.
-	public func savepoint(block: Connection.SavepointBlock) throws -> Connection.SavepointCompletion {
+	@discardableResult public func savepoint(block: Connection.SavepointBlock) throws -> Connection.SavepointCompletion {
 		return try queue.sync {
 			try connection.savepoint(block: block)
 		}
