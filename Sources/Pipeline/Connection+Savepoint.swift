@@ -80,11 +80,10 @@ extension Connection {
 			switch action {
 			case .release:
 				try release(savepoint: savepointUUID)
-				return .release
 			case .rollback:
 				try rollback(to: savepointUUID)
-				return .rollback
 			}
+			return action
 		} catch let error {
 			try? rollback(to: savepointUUID)
 			throw error
