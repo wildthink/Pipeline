@@ -136,11 +136,10 @@ extension Connection {
 			switch action {
 			case .commit:
 				try commit()
-				return .commit
 			case .rollback:
 				try rollback()
-				return .rollback
 			}
+			return action
 		} catch let error {
 			if !isInAutocommitMode {
 				try rollback()
