@@ -26,10 +26,6 @@ Add a package dependency to https://github.com/sbooth/Pipeline in Xcode.
 1. Clone the [Pipeline](https://github.com/sbooth/Pipeline) repository.
 2. `swift build`.
 
-### CSQLite
-
-Pipeline uses the [CSQLite](https://github.com/sbooth/CSQLite) package for the SQLite library. For performance reasons CSQLite is built without pre-update hook support. In order to enable the pre-update hook in Pipeline it is necessary to clone a local copy of CSQLite and edit the build options appropriately in [Package.swift](https://github.com/sbooth/CSQLite/blob/main/Package.swift).
-
 ## Quick Start
 
 ```swift
@@ -52,7 +48,7 @@ try connection.execute(sql: "SELECT a,b FROM t1;") { row in
 
 ### Segue to Thread Safety
 
-Pipeline compiles SQLite with thread safety disabled for improved performance. While this increases performance, it also means a `Connection` object may only be accessed from a single thread or dispatch queue at a time.
+Pipeline uses SQLite with thread safety disabled for improved performance. While this increases performance, it also means a `Connection` object may only be accessed from a single thread or dispatch queue at a time.
 
 Most applications should not create a `Connection` directly but instead should use a thread-safe `ConnectionQueue`.
 
@@ -73,7 +69,12 @@ try connectionQueue.sync { connection in
 connectionQueue.async { connection in
     // Do something with `connection`
 } completion: { result in
-    // Handle any errors that occurred
+    switch result {
+        case .success:
+            // 🎉
+        case .failure(let error):
+            // Handle any errors that occurred
+    }
 }
 ```
 
@@ -171,21 +172,47 @@ try connection.execute(sql: "SELECT * FROM t1;") { row in
 ### Perform a Transaction
 
 ```swift
-let result = try connection.transaction { connection in
+try connection.transaction { connection, command in
     // Do something with `connection`
-    return .commit
 }
-// Result is either `.commit`. or `.rollback`
 ```
+
+Transactions are committed by default after the transaction closure returns.
+
+To roll back a transaction instead, set `command` to `.rollback`:
+
+```swift
+try connection.transaction { connection, command in
+    // If a condition occurs that prevents the transaction from committing:
+    command = .rollback
+}
+```
+
+A rollback is not considered an error condition unless execution of the rollback fails.
+
+Transactions may also return a value:
+
+```swift
+let (command, value) = try connection.transaction { connection, command -> Int64 in
+    // ... some long and complex sequence of database commands inserting a row 
+    return connection.lastInsertRowid
+}
+```
+
+`command` contains the result of the transaction (whether it was committed or rolled back), and `value` is the value returned from the transaction closure.
 
 Database transactions may also be performed asynchronously using `ConnectionQueue`.
 
 ```swift
-connectionQueue.asyncTransaction { connection in
+connectionQueue.asyncTransaction { connection, command in
     // Do something with `connection`
-    return .commit
 } completion: { result in
-    // Handle any errors that occurred
+    switch result {
+        case .success:
+            // 🎉
+        case .failure(let error):
+            // Handle any errors that occurred
+    }
 }
 ```
 
@@ -242,7 +269,7 @@ struct Event {
 
 let eventConverter = RowConverter<Event> { row in
     let description = try row.text(at: 0)
-    let date = try row.get(.timeIntervalSinceReferenceDate, at: 1)
+    let date = try row.get(.dateWithTimeIntervalSinceReferenceDate, at: 1)
     return Event(description: description, date: date)
 }
 
@@ -250,13 +277,23 @@ let connection = try Connection()
 
 let sevenDaysAgo = Date() - 7 * 24 * 60 * 60
 
-let publisher = connection.rowPublisher(sql: "select what, when from event where when >= ?;") {
+let publisher = connection.rowPublisher(sql: "SELECT description, date FROM event WHERE date >= ?1;") {
     try $0.bind(.timeIntervalSinceReferenceDate(sevenDaysAgo), toParameter: 1)
 }
 
 publisher
     .mapRows(eventConverter)
 ```
+
+## Miscellaneous
+
+### CSQLite
+
+Pipeline uses [CSQLite](https://github.com/sbooth/CSQLite), a Swift package of the SQLite [amalgamation](https://sqlite.org/amalgamation.html) with the [carray](https://www.sqlite.org/carray.html), [decimal](https://sqlite.org/src/file/ext/misc/decimal.c), [ieee754](https://sqlite.org/src/file/ext/misc/ieee754.c), [series](https://sqlite.org/src/file/ext/misc/series.c), [sha3](https://sqlite.org/src/file/ext/misc/shathree.c), and [uuid](https://sqlite.org/src/file/ext/misc/uuid.c) extensions added, along with wrappers for C functions not easily usable from Swift.
+
+### SQLite Build Options
+
+For performance reasons CSQLite is built without pre-update hook support. Unfortunately there is no way using Swift Package Manager to expose [package features](https://forums.swift.org/t/my-swiftpm-wishlist-aka-proposal-proposals/35292) or build options, in this case the SQLite [pre-update hook](https://sqlite.org/c3ref/preupdate_count.html) and the [session](https://sqlite.org/sessionintro.html) extension. For this reason SQLite build options must be customized by changing to a local CSQLite package dependency and editing [CSQLite/Package.swift](https://github.com/sbooth/CSQLite/blob/main/Package.swift).
 
 ## License
 
