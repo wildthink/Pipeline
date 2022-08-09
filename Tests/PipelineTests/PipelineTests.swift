@@ -87,6 +87,77 @@ final class PipelineTests: XCTestCase {
 		try! connection.execute(sql: "insert into t1(a) values (?);", parameters: [.null])
 	}
 
+	func testTransaction() {
+		let connection = try! Connection()
+
+		var result = try! connection.transaction { connection, command in
+		}
+		XCTAssertEqual(result.command, .commit)
+
+		result = try! connection.transaction { connection, command in
+			command = .rollback
+		}
+		XCTAssertEqual(result.command, .rollback)
+
+		let value = 9
+		let result2 = try! connection.transaction { connection, command in
+			return value
+		}
+		XCTAssertEqual(result2.command, .commit)
+		XCTAssertEqual(result2.value, value)
+	}
+
+	func testAsyncTransaction() {
+		let queue = try! ConnectionQueue(label: "cq")
+
+		let expectation = self.expectation(description: "transaction")
+
+		var result: Result<Connection.TransactionResult<Int64>, Error>?
+		queue.asyncTransaction { connection, command -> Int64 in
+			//connection.lastInsertRowid
+			25
+		} completion: {
+			result = $0
+			expectation.fulfill()
+		}
+
+		waitForExpectations(timeout: 5)
+
+		if case let .success((command, value)) = result {
+			XCTAssertEqual(command, .commit)
+			XCTAssertEqual(value, 25)
+		} else {
+			XCTAssert(false)
+		}
+	}
+
+	func testAsyncTransaction2() {
+		let queue = try! ConnectionQueue(label: "cq")
+
+		let expectation = self.expectation(description: "transaction")
+
+		let msg = "something went wrong"
+		var result: Result<Connection.TransactionResult<Int64>, Error>?
+		queue.asyncTransaction { connection, command -> Int64 in
+			throw DatabaseError(msg)
+		} completion: {
+			result = $0
+			expectation.fulfill()
+		}
+
+		waitForExpectations(timeout: 5)
+
+		if case let .failure(error) = result {
+			if let err = error as? DatabaseError {
+				XCTAssertEqual(err.message, msg)
+			} else {
+				XCTAssert(false)
+			}
+		} else {
+			XCTAssert(false)
+		}
+	}
+
 	func testIteration() {
 		let connection = try! Connection()
 
@@ -949,7 +1020,7 @@ final class PipelineTests: XCTestCase {
 			return Person(firstName: firstName, lastName: lastName)
 		}
 
-		let person = try! connection.first(personConverter, from: "person")
+		let person = try! connection.query(personConverter, sql: "SELECT * FROM person LIMIT 1").first
 		XCTAssert(person?.firstName == "Isaac")
 		XCTAssert(person?.lastName == "Newton")
 	}
