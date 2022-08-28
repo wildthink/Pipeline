@@ -548,7 +548,12 @@ extension SQLParameter {
 	public static func json<T>(_ value: T, encoder: JSONEncoder = JSONEncoder()) -> SQLParameter where T: Encodable {
 		return SQLParameter { statement, index in
 			let b = try encoder.encode(value)
-			try statement.bind(blob: b, toParameter: index)
+            // jmj SQLite prefers JSON as Text
+            if let s = String(data: b, encoding: .utf8) {
+                try statement.bind(text: s, toParameter: index)
+            } else {
+                try statement.bind(blob: b, toParameter: index)
+            }
 		}
 	}
 }
