@@ -228,6 +228,20 @@ final class PipelineTests: XCTestCase {
         }
      }
 
+    func testEmbeddedJSON() {
+        let connection = try! Connection()
+        
+        struct TestStruct: Codable {
+            let a: Int
+            let b: [String]
+            let c: [Int]
+            let d: [String:Float]
+            
+        }
+        
+        try! connection.execute(sql: "create table t1(a);")
+    }
+    
 	func testCodable() {
 		let connection = try! Connection()
 
