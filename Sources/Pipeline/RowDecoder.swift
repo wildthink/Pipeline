@@ -31,6 +31,14 @@ public class RowDecoder: TopLevelDecoder {
 	/// Currently not used.
 	open var userInfo: [CodingUserInfoKey: Any] = [:]
 
+    public init(
+        dateDecodingMethod: DateDecodingMethod = .deferredToDate,
+        userInfo: [CodingUserInfoKey: Any] = [:]
+    ){
+        self.dateDecodingMethod = dateDecodingMethod
+        self.userInfo = userInfo
+    }
+    
 	fileprivate struct Options {
 		let dateDecodingStrategy: DateDecodingMethod
 		let userInfo: [CodingUserInfoKey: Any]

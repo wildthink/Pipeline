@@ -48,7 +48,11 @@ public final class BLOB {
 	deinit {
 		let result = sqlite3_blob_close(blob);
 		if result != SQLITE_OK  {
-			os_log(.info, "Error closing BLOB: %{public}@ [%d]", sqlite3_errstr(result), result)
+            if #available(macOS 10.14, *) {
+                os_log(.info, "Error closing BLOB: %{public}@ [%d]", sqlite3_errstr(result), result)
+            } else {
+                // Fallback on earlier versions
+            }
 		}
 	}
 

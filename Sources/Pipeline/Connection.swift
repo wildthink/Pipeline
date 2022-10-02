@@ -40,11 +40,19 @@ public final class Connection {
 			if result == SQLITE_BUSY {
 				var preparedStatement: SQLitePreparedStatement? = sqlite3_next_stmt(databaseConnection, nil)
 				while preparedStatement != nil {
-					os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
+                    if #available(macOS 10.14, *) {
+                        os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
+                    } else {
+                        // Fallback on earlier versions
+                    }
 					preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
 				}
 			} else {
-				os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
+                if #available(macOS 10.14, *) {
+                    os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
+                } else {
+                    // Fallback on earlier versions
+                }
 			}
 		}
 //		_ = sqlite3_close_v2(databaseConnection)
