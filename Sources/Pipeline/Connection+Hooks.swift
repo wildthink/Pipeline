@@ -203,6 +203,17 @@ extension Connection {
 		tableChangeEventSubject
 			.eraseToAnyPublisher()
 	}
+    
+    /// Returns a publisher for commits to the database
+    ///
+    /// - note: The publisher uses the database's commit hook for event generation. If this
+    /// publisher is used the commit hook is unavailable.
+    ///
+    /// - returns: A publisher always returns true.
+    public var databaseDidCommitPublisher: AnyPublisher<Bool, Never> {
+        databaseDidCommitEventSubject
+            .eraseToAnyPublisher()
+    }
 }
 
 #endif

@@ -129,6 +129,15 @@ public final class Connection {
 		return subject
 	}()
 
+    lazy var databaseDidCommitEventSubject: PassthroughSubject<Bool, Never> = {
+        let subject = PassthroughSubject<Bool, Never>()
+        setCommitHook {
+            subject.send(true)
+            return true
+        }
+        return subject
+    }()
+
 #endif
 }
 
