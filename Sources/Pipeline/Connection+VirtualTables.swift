@@ -1,5 +1,5 @@
 //
-// Copyright © 2015 - 2022 Stephen F. Booth <me@sbooth.org>
+// Copyright © 2015 - 2023 Stephen F. Booth <me@sbooth.org>
 // Part of https://github.com/sbooth/Pipeline
 // MIT license
 //
@@ -153,7 +153,7 @@ extension Connection {
 		/// Creates client data for a module.
 		init(module: inout sqlite3_module, _ construct: @escaping (_ arguments: [String], _ create: Bool) throws -> VirtualTableModule) {
 			let module_ptr = UnsafeMutablePointer<sqlite3_module>.allocate(capacity: 1)
-			module_ptr.assign(from: &module, count: 1)
+			module_ptr.update(from: &module, count: 1)
 			self.module = module_ptr
 			self.construct = construct
 		}
