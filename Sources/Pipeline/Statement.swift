@@ -218,6 +218,39 @@ public final class Statement {
 		}
 		return index
 	}
+
+	/// Possible prepared statement explain modes.
+	public enum ExplainMode {
+		/// The prepared statement behaves as normal.
+		case normal
+		/// The prepares statement behaves as if its SQL text begins with `EXPLAIN`.
+		case explain
+		/// The prepares statement behaves as if its SQL text begins with `EXPLAIN QUERY PLAN`.
+		case explainQueryPlan
+	}
+
+	/// Changes the `EXPLAIN` mode for the prepared statement.
+	///
+	/// - parameter mode: The desired explain mode.
+	///
+	/// - throws: An error if the statement's explain mode could not be changed.
+	///
+	/// - seealso: [Change The EXPLAIN Setting For A Prepared Statement](https://sqlite.org/c3ref/stmt_explain.html)
+	public func explain(_ mode: ExplainMode) throws {
+		let eMode: Int32
+		switch mode {
+		case .normal:
+			eMode = 0
+		case .explain:
+			eMode = 1
+		case .explainQueryPlan:
+			eMode = 2
+		}
+		let result = sqlite3_stmt_explain(preparedStatement, eMode)
+		guard result == SQLITE_OK else {
+			throw SQLiteError("Error setting statement explain mode", code: result)
+		}
+	}
 }
 
 extension Statement {
