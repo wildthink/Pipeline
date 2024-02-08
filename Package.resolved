@@ -1,16 +1,14 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "CSQLite",
-        "repositoryURL": "https://github.com/sbooth/CSQLite",
-        "state": {
-          "branch": null,
-          "revision": "c0a72c836e322e2b426d4f4a831832fa3b22fc9c",
-          "version": "3.42.0"
-        }
+  "pins" : [
+    {
+      "identity" : "csqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sbooth/CSQLite",
+      "state" : {
+        "revision" : "25898dc4ece16ae2e15bc5b72c74a53aa80ed6fd",
+        "version" : "3.44.2"
       }
-    ]
-  },
-  "version": 1
+    }
+  ],
+  "version" : 2
 }
