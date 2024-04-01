@@ -20,7 +20,7 @@ public typealias SQLiteDatabaseConnection = OpaquePointer
 /// A connection to an [SQLite](https://sqlite.org) database.
 public final class Connection {
 	/// The underlying `sqlite3 *` connection handle.
-	let databaseConnection: SQLiteDatabaseConnection
+	public let databaseConnection: SQLiteDatabaseConnection
 
 	/// The connection's custom busy handler.
 	var busyHandler: UnsafeMutablePointer<BusyHandler>?
