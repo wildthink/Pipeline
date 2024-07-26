@@ -119,13 +119,38 @@ private extension RowDecoderGuts {
 		return try decode(value, as: type)
 	}
 
+    // NOTE: jmj - See `decode(...)` below
+    func decodeColumn<T>(_ value: DatabaseValue, as type: T.Type
+    ) throws -> T where T : Decodable {
+        switch value {
+            case .blob(let data):
+                return try JSONDecoder().decode(T.self, from: data)
+            case .text(let text):
+                guard let data = text.data(using: .utf8)
+                else {
+                    throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "String \"\(text)\" isn't a valid data."))
+                }
+                return try JSONDecoder().decode(T.self, from: data)
+            default:
+                throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Column isn't valid data."))
+        }
+    }
+    
+    // NOTE: jmj
+    // SQLite supports JSON as column values so we try? to
+    // decode a value from it only. If that fails, then try
+    // to use "some" columns to satisfy the decoding.
+    // For example, a latitude and longitude might have been
+    // flattened on the row but we want a single CLLocation property
 	func decode<T>(_ value: DatabaseValue, as type: T.Type) throws -> T where T : Decodable {
 		if type == Date.self {
 			return try decodeDate(value) as! T
-		} else if type == URL.self {
-			return try decodeURL(value) as! T
+        } else if type == URL.self {
+            return try decodeURL(value) as! T
+        } else if let result = try? decodeColumn(value, as: T.self) {
+            return result
 		} else {
-			return try T(from: self)
+            return try T(from: self)
 		}
 	}
 
