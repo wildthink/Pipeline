@@ -121,7 +121,7 @@ extension Connection {
 	}
 
 	/// An insert, delete, or update event on a rowid table.
-	public struct TableChangeEvent {
+    public struct TableChangeEvent: Equatable {
 		/// The type of row change.
 		public let changeType: RowChangeType
 		/// The name of the database containing the table that changed.

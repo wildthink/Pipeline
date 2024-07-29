@@ -155,6 +155,7 @@ private extension RowDecoderGuts {
 	}
 
 	func decodeFixedWidthInteger<T>(_ value: DatabaseValue) throws -> T where T: FixedWidthInteger {
+        if value == .null { return .zero } // jmj
 		guard case let .integer(i) = value else {
 			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
@@ -162,6 +163,7 @@ private extension RowDecoderGuts {
 	}
 
 	func decodeFloatingPoint<T>(_ value: DatabaseValue) throws -> T where T: BinaryFloatingPoint {
+        if value == .null { return .zero } // jmj
 		guard case let .real(r) = value else {
 			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 		}
@@ -244,6 +246,7 @@ private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
 
 	func decode(_ type: Bool.Type, forKey key: K) throws -> Bool {
 		let value = try valueForKey(key)
+        if value == .null { return false } // jmj
 		guard case let .integer(i) = value else {
 			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not integer."))
 		}
@@ -252,6 +255,7 @@ private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
 
 	func decode(_ type: String.Type, forKey key: K) throws -> String {
 		let value = try valueForKey(key)
+        if value == .null { return "" } // jmj
 		guard case let .text(s) = value else {
 			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not text."))
 		}
@@ -583,3 +587,43 @@ private extension RangeReplaceableCollection {
 		return mutable
 	}
 }
+
+// MARK: DatabaseValue Codable - jmj
+extension DatabaseValue: Decodable {
+    public init(from decoder: any Decoder) throws {
+        var container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let v = try? container.decode(Double.self) {
+            self = .real(v)
+        } else if let v = try? container.decode(Int64.self) {
+            self = .integer(v)
+        } else if let v = try? container.decode(String.self) {
+            self = .text(v)
+        } else if let v = try? container.decode(Data.self) {
+            self = .blob(v)
+        } else {
+            self = .null
+        }
+    }
+}
+
+extension DatabaseValue: Encodable {
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch self {
+            case .null:
+                try container.encodeNil()
+            case .integer(let v):
+                try container.encode(v)
+            case .real(let v):
+                try container.encode(v)
+            case .text(let v):
+                try container.encode(v)
+            case .blob(let v):
+                try container.encode(v)
+        }
+    }
+}
+
