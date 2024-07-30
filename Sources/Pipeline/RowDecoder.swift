@@ -74,6 +74,25 @@ private struct RowDecoderGuts {
 	var iso8601DateFormatter: ISO8601DateFormatter?
 }
 
+// MARK: RowDecoder Error
+protocol RowDecoderContext {
+    func typeMismatch(
+    _ stype: Any.Type,
+    _ ctx: DecodingError.Context,
+    _ file: StaticString,
+    _ line: Int)
+}
+
+fileprivate func typeMismatch(
+    _ stype: Any.Type,
+    _ ctx: DecodingError.Context,
+    _ file: StaticString = #fileID,
+    _ line: Int = #line
+) -> Error {
+    print("ERROR: typeMismatch", file, line)
+    return DecodingError.typeMismatch(stype, ctx)
+}
+
 private extension RowDecoderGuts {
 	init(payload: Payload, codingPath: [CodingKey], userInfo: [CodingUserInfoKey: Any], options: RowDecoder.Options) {
 		self.payload = payload
@@ -90,7 +109,7 @@ private extension RowDecoderGuts {
 extension RowDecoderGuts: Decoder {
 	func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
+			throw typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
 		}
 		let container = KeyedContainer<Key>(values: try row.valueDictionary(), decoder: self, codingPath: codingPath)
 		return KeyedDecodingContainer(container)
@@ -98,14 +117,14 @@ extension RowDecoderGuts: Decoder {
 
 	func unkeyedContainer() throws -> UnkeyedDecodingContainer {
 		guard case let .row(row) = payload else {
-			throw DecodingError.typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
+			throw typeMismatch(Row.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode Row but found DatabaseValue."))
 		}
 		return UnkeyedContainer(values: try row.values(), decoder: self, codingPath: codingPath)
 	}
 
 	func singleValueContainer() throws -> SingleValueDecodingContainer {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
+			throw typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
 		}
 		return SingleValueContainer(value: value, decoder: self, codingPath: codingPath)
 	}
@@ -114,7 +133,7 @@ extension RowDecoderGuts: Decoder {
 private extension RowDecoderGuts {
 	func decode<T>(as type: T.Type) throws -> T where T : Decodable {
 		guard case let .value(value) = payload else {
-			throw DecodingError.typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
+			throw typeMismatch(DatabaseValue.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Expected to decode DatabaseValue but found Row."))
 		}
 		return try decode(value, as: type)
 	}
@@ -155,17 +174,17 @@ private extension RowDecoderGuts {
 	}
 
 	func decodeFixedWidthInteger<T>(_ value: DatabaseValue) throws -> T where T: FixedWidthInteger {
-        if value == .null { return .zero } // jmj
+        if case let .null = value { return .zero } // jmj
 		guard case let .integer(i) = value else {
-			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
+			throw typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
 		return T(i)
 	}
 
 	func decodeFloatingPoint<T>(_ value: DatabaseValue) throws -> T where T: BinaryFloatingPoint {
-        if value == .null { return .zero } // jmj
+        if case let .null = value { return .zero } // jmj
 		guard case let .real(r) = value else {
-			throw DecodingError.typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
+			throw typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 		}
 		return T(r)
 	}
@@ -177,19 +196,19 @@ private extension RowDecoderGuts {
 
 		case .timeIntervalSince1970:
 			guard case let .real(r) = value else {
-				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
+				throw typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 			}
 			return Date(timeIntervalSince1970: r)
 
 		case .timeIntervalSinceReferenceDate:
 			guard case let .real(r) = value else {
-				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
+				throw typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 			}
 			return Date(timeIntervalSinceReferenceDate: r)
 
 		case .iso8601:
 			guard case let .text(t) = value else {
-				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
+				throw typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 			}
 			precondition(iso8601DateFormatter != nil)
 			guard let date = iso8601DateFormatter!.date(from: t) else {
@@ -199,7 +218,7 @@ private extension RowDecoderGuts {
 
 		case .formatted(let formatter):
 			guard case let .text(t) = value else {
-				throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
+				throw typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 			}
 			guard let date = formatter.date(from: t) else {
 				throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "String \"\(t)\" doesn't match the expected date format."))
@@ -213,7 +232,7 @@ private extension RowDecoderGuts {
 
 	func decodeURL(_ value: DatabaseValue) throws -> URL {
 		guard case let .text(t) = value else {
-			throw DecodingError.typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
+			throw typeMismatch(Date.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 		}
 		guard let url = URL(string: t) else {
 			throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Invalid URL string."))
@@ -246,20 +265,24 @@ private struct KeyedContainer<K: CodingKey>: KeyedDecodingContainerProtocol {
 
 	func decode(_ type: Bool.Type, forKey key: K) throws -> Bool {
 		let value = try valueForKey(key)
-        if value == .null { return false } // jmj
-		guard case let .integer(i) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not integer."))
-		}
-		return i != 0
+        // jmj
+        switch value {
+            case .null: return false
+            case let .integer(v): return v != 0
+            default:
+                throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not integer."))
+        }
 	}
 
 	func decode(_ type: String.Type, forKey key: K) throws -> String {
 		let value = try valueForKey(key)
-        if value == .null { return "" } // jmj
-		guard case let .text(s) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not text."))
-		}
-		return s
+        // jmj
+        switch value {
+            case .null: return ""
+            case let .text(v): return v
+            default:
+                throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Column \"\(key)\" type is not text."))
+        }
 	}
 
 	func decode(_ type: Double.Type, forKey key: K) throws -> Double {
@@ -381,7 +404,7 @@ private struct UnkeyedContainer: UnkeyedDecodingContainer {
 		}
 		let value = values[currentIndex]
 		guard case let .integer(i) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
+			throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
 		currentIndex += 1
 		return i != 0
@@ -393,7 +416,7 @@ private struct UnkeyedContainer: UnkeyedDecodingContainer {
 		}
 		let value = values[currentIndex]
 		guard case let .text(s) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
+			throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 		}
 		currentIndex += 1
 		return s
@@ -506,14 +529,14 @@ private struct SingleValueContainer: SingleValueDecodingContainer {
 
 	func decode(_ type: Bool.Type) throws -> Bool {
 		guard case let .integer(i) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
+			throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
 		return i != 0
 	}
 
 	func decode(_ type: String.Type) throws -> String {
 		guard case let .text(s) = value else {
-			throw DecodingError.typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
+			throw typeMismatch(type, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not text."))
 		}
 		return s
 	}
@@ -627,3 +650,55 @@ extension DatabaseValue: Encodable {
     }
 }
 
+// MARK: DatabaseValue Convenience inits
+public protocol DatabaseValueConvertable {
+    init?(databaseValue: DatabaseValue)
+    func encode() -> DatabaseValue
+}
+
+public extension DatabaseValue {
+    
+    init<V: FixedWidthInteger>(_ value: V) {
+        self = .integer(Int64(value))
+    }
+    
+    init<V: BinaryFloatingPoint>(_ value: V) {
+        self = .real(Double(value))
+    }
+    
+    init(_ value: String) {
+        self = .text(value)
+    }
+    
+    init(_ value: Substring) {
+        self = .text(String(value))
+    }
+    
+    @_disfavoredOverload
+    init?(_ value: Any?) {
+        self = switch value {
+            case let it as any FixedWidthInteger:
+                    .integer(Int64(it))
+            case let it as any BinaryFloatingPoint:
+                    .real(Double(it))
+            case let it as Data:
+                    .blob(it)
+            case let it as String:
+                    .text(it)
+            case let it as Substring:
+                    .text(String(it))
+            case let it as DatabaseValueConvertable:
+                it.encode()
+            case let it as any Encodable:
+                if let data = try? JSONEncoder().encode(it),
+                   let txt = String(data: data, encoding: .utf8)
+                {
+                    .text(txt)
+                } else { nil }
+            case _ where value == nil:
+                    .null
+            default:
+                nil
+        }
+    }
+}
