@@ -74,14 +74,13 @@ private struct RowDecoderGuts {
 	var iso8601DateFormatter: ISO8601DateFormatter?
 }
 
-// MARK: RowDecoder Error
-protocol RowDecoderContext {
-    func typeMismatch(
-    _ stype: Any.Type,
-    _ ctx: DecodingError.Context,
-    _ file: StaticString,
-    _ line: Int)
+extension [CodingKey]: CustomDebugStringConvertible {
+    var debugDescription: String {
+        self.map(\.stringValue).joined(separator: ".")
+    }
 }
+
+//[CodingKeys(stringValue: "people", intValue: nil)]
 
 fileprivate func typeMismatch(
     _ stype: Any.Type,
@@ -89,7 +88,7 @@ fileprivate func typeMismatch(
     _ file: StaticString = #fileID,
     _ line: Int = #line
 ) -> Error {
-    print("ERROR: typeMismatch", file, line)
+    print("ERROR: typeMismatch \(file):\(line)", ctx.codingPath.debugDescription)
     return DecodingError.typeMismatch(stype, ctx)
 }
 
@@ -150,6 +149,12 @@ private extension RowDecoderGuts {
                     throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "String \"\(text)\" isn't a valid data."))
                 }
                 return try JSONDecoder().decode(T.self, from: data)
+            case .null:
+                if let f = T.self as? ExpressibleByNull.Type {
+                    return f.decodeNull() as! T
+                } else {
+                    throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Column isn't valid data."))
+                }
             default:
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: codingPath, debugDescription: "Column isn't valid data."))
         }
@@ -655,6 +660,18 @@ public protocol DatabaseValueConvertable {
     init?(databaseValue: DatabaseValue)
     func encode() -> DatabaseValue
 }
+
+public protocol ExpressibleByNull {
+//    typealias Me = Self
+    static func decodeNull() -> Self
+}
+
+extension Array: ExpressibleByNull where Element: Codable {
+    public static func decodeNull() -> Array<Element> {
+        []
+    }
+}
+
 
 public extension DatabaseValue {
     
