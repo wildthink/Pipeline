@@ -673,6 +673,24 @@ extension Array: ExpressibleByNull where Element: Codable {
 }
 
 
+protocol AnyOptional {
+  static var nilValue: Self { get }
+  var wrapped: Any? { get }
+}
+
+extension Optional: AnyOptional {
+    static var nilValue: Optional<Wrapped> { nil }
+
+    var wrapped: Any? {
+    switch self {
+    case let .some(value):
+      return value
+    case .none:
+      return nil
+    }
+  }
+}
+
 public extension DatabaseValue {
     
     init<V: FixedWidthInteger>(_ value: V) {
@@ -694,6 +712,8 @@ public extension DatabaseValue {
     @_disfavoredOverload
     init?(_ value: Any?) {
         self = switch value {
+            case let it as any AnyOptional where it.wrapped == nil:
+                    .null
             case let it as any FixedWidthInteger:
                     .integer(Int64(it))
             case let it as any BinaryFloatingPoint:
