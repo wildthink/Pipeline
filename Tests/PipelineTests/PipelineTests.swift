@@ -1141,6 +1141,7 @@ final class PipelineTests: XCTestCase {
 	}
 
 #endif
+<<<<<<< HEAD
 
 	/// Creates a URL for a temporary file on disk. Registers a teardown block to
 	/// delete a file at that URL (if one exists) during test teardown.
