@@ -6,7 +6,7 @@
 
 import os.log
 import Foundation
-import CSQLite
+
 import CPipeline
 
 /// A cursor for an SQLite virtual table.

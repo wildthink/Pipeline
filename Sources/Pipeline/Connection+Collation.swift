@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// A comparator for `String` objects.
 ///

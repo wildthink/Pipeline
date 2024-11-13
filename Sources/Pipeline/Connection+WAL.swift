@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// Possible write-ahead log (WAL) checkpoint types.
 ///

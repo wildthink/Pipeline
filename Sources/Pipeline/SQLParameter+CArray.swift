@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 //#if CSQLITE_CARRAY
 

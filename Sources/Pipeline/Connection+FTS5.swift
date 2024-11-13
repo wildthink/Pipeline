@@ -6,7 +6,7 @@
 
 import os.log
 import Foundation
-import CSQLite
+
 
 /// An interface to a custom FTS5 tokenizer.
 public protocol FTS5Tokenizer {

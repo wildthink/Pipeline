@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// A struct responsible for converting the value of a column in a result row to `T`.
 ///
