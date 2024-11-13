@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// A custom SQL function.
 ///

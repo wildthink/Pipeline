@@ -7,7 +7,7 @@
 #if canImport(Combine)
 
 import Foundation
-import CSQLite
+
 import Combine
 
 extension Connection {

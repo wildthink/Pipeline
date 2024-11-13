@@ -7,7 +7,7 @@
 
 import CoreGraphics
 import Foundation
-import CSQLite
+
 import TabularData
 
 // MARK: SQLite Connection

@@ -6,7 +6,7 @@
 
 import os.log
 import Foundation
-import CSQLite
+
 
 #if canImport(Combine)
 import Combine

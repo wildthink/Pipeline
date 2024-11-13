@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Connection {
 	/// Available per-connection database limit parameters.

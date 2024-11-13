@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// A fundamental data type value in an SQLite database.
 ///

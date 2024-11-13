@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// An `sqlite3_snapshot *` object.
 ///

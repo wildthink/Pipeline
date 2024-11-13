@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 /// A struct responsible for binding a captured value to an SQL parameter.
 ///

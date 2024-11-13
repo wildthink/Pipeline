@@ -6,7 +6,7 @@
 
 import os.log
 import Foundation
-import CSQLite
+
 
 /// An `sqlite3_blob *` object.
 ///

@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Statement {
 	/// The number of SQL parameters in this statement.

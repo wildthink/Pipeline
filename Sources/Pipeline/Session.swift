@@ -6,7 +6,7 @@
 
 import os.log
 import Foundation
-import CSQLite
+
 
 #if SQLITE_ENABLE_PREUPDATE_HOOK && SQLITE_ENABLE_SESSION
 

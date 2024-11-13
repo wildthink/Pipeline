@@ -5,7 +5,7 @@
 //
 
 import XCTest
-@testable import CSQLite
+@testable 
 import Pipeline
 #if canImport(Combine)
 import Combine

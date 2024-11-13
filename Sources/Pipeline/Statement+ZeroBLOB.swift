@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Statement {
 	/// Binds a BLOB filled with zeroes to the SQL parameter at `index`.

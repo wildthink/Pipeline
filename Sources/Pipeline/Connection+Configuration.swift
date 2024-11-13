@@ -5,7 +5,7 @@
 //
 
 import Foundation
-import CSQLite
+
 
 extension Connection {
 	/// Enables or disables the enforcement of foreign key constraints for the database connection.
