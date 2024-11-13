@@ -3,10 +3,10 @@
     {
       "identity" : "csqlite",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sbooth/CSQLite",
+      "location" : "https://github.com/wildthink/CSQLite",
       "state" : {
-        "revision" : "25898dc4ece16ae2e15bc5b72c74a53aa80ed6fd",
-        "version" : "3.44.2"
+        "branch" : "main",
+        "revision" : "47909ad05ebb86d8db34203e71c820bad1f6d058"
       }
     }
   ],

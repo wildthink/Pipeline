@@ -5,7 +5,8 @@
 //
 
 import XCTest
-import CSQLite
+@testable import CSQLite
+import Pipeline
 #if canImport(Combine)
 import Combine
 #endif
@@ -491,6 +492,11 @@ final class PipelineTests: XCTestCase {
 		XCTAssertEqual(count, 2)
 
 		let statement = try! connection.prepare(sql: "select * from t1 where t1 match 'o*';")
+        // jmj
+        if let declType = sqlite3_column_decltype(statement.preparedStatement, Int32(1)) {
+            print(declType)
+        }
+        
 		try! statement.results { row in
 			let s = try row.get(.string, at: 0)
 			XCTAssert(s.starts(with: "jumps over"))
@@ -1141,7 +1147,6 @@ final class PipelineTests: XCTestCase {
 	}
 
 #endif
-<<<<<<< HEAD
 
 	/// Creates a URL for a temporary file on disk. Registers a teardown block to
 	/// delete a file at that URL (if one exists) during test teardown.

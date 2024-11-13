@@ -74,11 +74,12 @@ private struct RowDecoderGuts {
 	var iso8601DateFormatter: ISO8601DateFormatter?
 }
 
-extension [CodingKey]: CustomDebugStringConvertible {
-    var debugDescription: String {
-        self.map(\.stringValue).joined(separator: ".")
-    }
-}
+// jmj -removed
+//extension [CodingKey]: CustomDebugStringConvertible {
+//    var debugDescription: String {
+//        self.map(\.stringValue).joined(separator: ".")
+//    }
+//}
 
 //[CodingKeys(stringValue: "people", intValue: nil)]
 
@@ -179,7 +180,7 @@ private extension RowDecoderGuts {
 	}
 
 	func decodeFixedWidthInteger<T>(_ value: DatabaseValue) throws -> T where T: FixedWidthInteger {
-        if case let .null = value { return .zero } // jmj
+        if case .null = value { return .zero }
 		guard case let .integer(i) = value else {
 			throw typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not integer."))
 		}
@@ -187,7 +188,7 @@ private extension RowDecoderGuts {
 	}
 
 	func decodeFloatingPoint<T>(_ value: DatabaseValue) throws -> T where T: BinaryFloatingPoint {
-        if case let .null = value { return .zero } // jmj
+        if case .null = value { return .zero }
 		guard case let .real(r) = value else {
 			throw typeMismatch(T.self, DecodingError.Context(codingPath: codingPath, debugDescription: "Database value type is not float."))
 		}
@@ -619,7 +620,7 @@ private extension RangeReplaceableCollection {
 // MARK: DatabaseValue Codable - jmj
 extension DatabaseValue: Decodable {
     public init(from decoder: any Decoder) throws {
-        var container = try decoder.singleValueContainer()
+        let container = try decoder.singleValueContainer()
         if container.decodeNil() {
             self = .null
         } else if let v = try? container.decode(Double.self) {

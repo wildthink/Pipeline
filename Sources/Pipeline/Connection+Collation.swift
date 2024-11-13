@@ -31,11 +31,18 @@ extension Connection {
 	public func addCollation(_ name: String, _ block: @escaping StringComparator) throws {
 		let function_ptr = UnsafeMutablePointer<StringComparator>.allocate(capacity: 1)
 		function_ptr.initialize(to: block)
+        
+        func str(_ p: UnsafeRawPointer?, len: Int32) -> String? {
+            guard let p else { return nil }
+            let len = Int(len)
+            let b = p.bindMemory(to: UInt8.self, capacity: len)
+            return String(bytes: UnsafeBufferPointer(start: b, count: len), encoding: .utf8)
+        }
+        
 		guard sqlite3_create_collation_v2(databaseConnection, name, SQLITE_UTF8, function_ptr, { (context, lhs_len, lhs_data, rhs_len, rhs_data) -> Int32 in
 			// Have total faith that SQLite will pass valid parameters and use unsafelyUnwrapped
-			let lhs = String(bytesNoCopy: UnsafeMutableRawPointer(mutating: lhs_data.unsafelyUnwrapped), length: Int(lhs_len), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
-			let rhs = String(bytesNoCopy: UnsafeMutableRawPointer(mutating: rhs_data.unsafelyUnwrapped), length: Int(rhs_len), encoding: .utf8, freeWhenDone: false).unsafelyUnwrapped
-
+            let lhs = str(lhs_data, len: lhs_len) ?? ""
+			let rhs = str(rhs_data, len: rhs_len) ?? ""
 			// Cast context to the appropriate type and call the comparator
 			let function_ptr = context.unsafelyUnwrapped.assumingMemoryBound(to: StringComparator.self)
 			let result = function_ptr.pointee(lhs, rhs)
