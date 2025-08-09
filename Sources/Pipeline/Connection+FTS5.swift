@@ -141,12 +141,9 @@ extension Connection {
 			let tokenizer = Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(tokenizer_ptr.unsafelyUnwrapped)).takeUnretainedValue() as! FTS5Tokenizer
 
 			// Set the text to be tokenized
-            func str(_ p: UnsafeRawPointer?, len: Int32) -> String? {
-                guard let p else { return nil }
-                let b = p.bindMemory(to: CChar.self, capacity: Int(len))
-                return String(cString: b)
-            }
-            let text = str(text_utf8, len: text_len) ?? ""
+            guard let text_utf8 else { return SQLITE_OK }
+            let text = String(cString: text_utf8)
+
 			let reason = FTS5TokenizationReason(flags)
 
 			tokenizer.setText(text, reason: reason)

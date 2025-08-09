@@ -20,7 +20,8 @@ public typealias SQLiteDatabaseConnection = OpaquePointer
 /// A connection to an [SQLite](https://sqlite.org) database.
 public final class Connection: @unchecked Sendable {
 	/// The underlying `sqlite3 *` connection handle.
-	public let databaseConnection: SQLiteDatabaseConnection
+	nonisolated(unsafe)
+    let databaseConnection: SQLiteDatabaseConnection
 
 	/// The connection's custom busy handler.
 	var busyHandler: UnsafeMutablePointer<BusyHandler>?
@@ -40,19 +41,11 @@ public final class Connection: @unchecked Sendable {
 			if result == SQLITE_BUSY {
 				var preparedStatement: SQLitePreparedStatement? = sqlite3_next_stmt(databaseConnection, nil)
 				while preparedStatement != nil {
-                    if #available(macOS 10.14, *) {
-                        os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
-                    } else {
-                        // Fallback on earlier versions
-                    }
+					os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
 					preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
 				}
 			} else {
-                if #available(macOS 10.14, *) {
-                    os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
-                } else {
-                    // Fallback on earlier versions
-                }
+				os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
 			}
 		}
 //		_ = sqlite3_close_v2(databaseConnection)
@@ -129,15 +122,6 @@ public final class Connection: @unchecked Sendable {
 		return subject
 	}()
 
-    lazy var databaseDidCommitEventSubject: PassthroughSubject<Bool, Never> = {
-        let subject = PassthroughSubject<Bool, Never>()
-        setCommitHook {
-            subject.send(true)
-            return true
-        }
-        return subject
-    }()
-
 #endif
 }
 
@@ -174,12 +158,7 @@ extension Connection {
 
 	/// `true` if an interrupt is currently in effect
 	public var isInterrupted: Bool {
-        if #available(iOS 17.2, *) {
-            sqlite3_is_interrupted(databaseConnection) != 0
-        } else {
-            false
-            // Fallback on earlier versions
-        }
+		sqlite3_is_interrupted(databaseConnection) != 0
 	}
 
 	/// Returns the name of the *n*th attached database.

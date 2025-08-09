@@ -147,7 +147,12 @@ public final class ConnectionReadQueue: Sendable {
 	/// - parameter block: A closure performing the database operation
 	/// - parameter connection: A `Connection` used for database access within `block`.
 	/// - parameter completion: A closure called with the result of the read transaction.
-	public func asyncReadTransaction(group: DispatchGroup? = nil, qos: DispatchQoS = .default, _ block: @Sendable @escaping (_ connection: Connection) -> Void, completion: @escaping CompletionHandler<Void>) {
+	public func asyncReadTransaction(
+        group: DispatchGroup? = nil,
+        qos: DispatchQoS = .default,
+        _ block: @Sendable @escaping (_ connection: Connection) -> Void,
+        completion: @escaping CompletionHandler<Void>
+    ) {
 		queue.async(group: group, qos: qos) {
 			do {
 				try self.connection.readTransaction(block)

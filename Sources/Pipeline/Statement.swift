@@ -55,11 +55,11 @@ public typealias SQLitePreparedStatement = OpaquePointer
 ///
 /// It is generally preferred to use the block-based method because any errors may be explicitly handled instead of
 /// silently discarded.
-public final class Statement {
+public final class Statement: @unchecked Sendable {
 	/// The owning database connection.
 	public let connection: Connection
 	/// The underlying `sqlite3_stmt *` object.
-	public let preparedStatement: SQLitePreparedStatement
+	let preparedStatement: SQLitePreparedStatement
 
 	/// Creates a compiled SQL statement.
 	///
@@ -236,8 +236,7 @@ public final class Statement {
 	/// - throws: An error if the statement's explain mode could not be changed.
 	///
 	/// - seealso: [Change The EXPLAIN Setting For A Prepared Statement](https://sqlite.org/c3ref/stmt_explain.html)
-    @available(iOS 17.2, *)
-    public func explain(_ mode: ExplainMode) throws {
+	public func explain(_ mode: ExplainMode) throws {
 		let eMode: Int32
 		switch mode {
 		case .normal:

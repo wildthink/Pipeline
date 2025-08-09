@@ -7,12 +7,13 @@
 import Foundation
 
 
-#if CSQLITE_CARRAY
+//#if CSQLITE_CARRAY
 
 extension SQLParameter {
 	/// Binds a collection of `Int32` values using the sqlite3 carray extension..
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public static func carray<C: Collection>(_ values: C) -> SQLParameter where C.Element == Int32 {
+	public static func carray<C: Collection>(_ values: C) -> SQLParameter
+    where C: Sendable, C.Element == Int32 {
 		SQLParameter { statement, index in
 			let mem = UnsafeMutableBufferPointer<Int32>.allocate(capacity: values.count)
 			_ = mem.initialize(from: values)
@@ -24,7 +25,8 @@ extension SQLParameter {
 
 	/// Binds a collection of `Int64` values using the sqlite3 carray extension..
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public static func carray<C: Collection>(_ values: C) -> SQLParameter where C.Element == Int64 {
+    public static func carray<C: Collection>(_ values: C) -> SQLParameter
+    where C: Sendable, C.Element == Int64 {
 		SQLParameter { statement, index in
 			let mem = UnsafeMutableBufferPointer<Int64>.allocate(capacity: values.count)
 			_ = mem.initialize(from: values)
@@ -36,7 +38,8 @@ extension SQLParameter {
 
 	/// Binds a collection of doubles using the sqlite3 carray extension..
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public static func carray<C: Collection>(_ values: C) -> SQLParameter where C.Element == Double {
+	public static func carray<C: Collection>(_ values: C) -> SQLParameter
+    where C: Sendable, C.Element == Double {
 		SQLParameter { statement, index in
 			let mem = UnsafeMutableBufferPointer<Double>.allocate(capacity: values.count)
 			_ = mem.initialize(from: values)
@@ -48,7 +51,8 @@ extension SQLParameter {
 
 	/// Binds a collection of strings using the sqlite3 carray extension..
 	/// - seealso: [The Carray() Table-Valued Function](https://www.sqlite.org/carray.html)
-	public static func carray<C: Collection>(_ values: C) -> SQLParameter where C.Element == String {
+	public static func carray<C: Collection>(_ values: C) -> SQLParameter
+    where C: Sendable, C.Element == String {
 		SQLParameter { statement, index in
 			let count = values.count
 
@@ -93,4 +97,4 @@ private func scan<S, Result>(_ sequence: S, _ initialResult: Result, _ nextParti
 	return result
 }
 
-#endif
+//#endif

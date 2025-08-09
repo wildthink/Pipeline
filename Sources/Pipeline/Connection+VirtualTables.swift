@@ -6,9 +6,9 @@
 
 import os.log
 import Foundation
+
 import CPipeline
 
-#if __VirtualTable
 /// A cursor for an SQLite virtual table.
 public protocol VirtualTableCursor {
 	/// Returns the value of  column `index` in the row at which the cursor is pointing.
@@ -166,7 +166,7 @@ extension Connection {
 	/// Virtual table module options.
 	///
 	/// - seealso: [Virtual Table Configuration Options](https://sqlite.org/c3ref/c_vtab_constraint_support.html)
-    public struct VirtualTableModuleOptions: OptionSet, Sendable {
+	public struct VirtualTableModuleOptions: OptionSet, Sendable {
 		public let rawValue: Int
 
 		public init(rawValue: Int) {
@@ -339,11 +339,6 @@ extension Connection {
 
 private func xCreate(_ db: OpaquePointer?, _ pAux: UnsafeMutableRawPointer?, _ argc: Int32, _ argv: UnsafePointer<UnsafePointer<Int8>?>?, _ ppVTab:UnsafeMutablePointer<UnsafeMutablePointer<sqlite3_vtab>?>?, _ pzErr: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?) -> Int32 {
 	return init_vtab(db, pAux, argc, argv, ppVTab, pzErr, true)
-}
-
-func csqlite_sqlite3_strdup(_ str: String?) -> String? {
-    let cp = str
-    return cp
 }
 
 private func xDestroy(_ pVTab: UnsafeMutablePointer<sqlite3_vtab>?) -> Int32 {
@@ -602,5 +597,3 @@ private func xRowid(_ pCursor: UnsafeMutablePointer<sqlite3_vtab_cursor>?, _ pRo
 		}
 	}
 }
-#endif
-

@@ -26,7 +26,7 @@ import Foundation
 ///     }
 /// }
 ///  ```
-public struct ColumnValueConverter<T> : Sendable{
+public struct ColumnValueConverter<T: Sendable>: Sendable {
 	/// Converts the value at `index` in `row` to `T` and returns the result.
 	///
 	/// - precondition: `row.type(ofColumn: index) != .null`.
@@ -365,24 +365,15 @@ extension ColumnValueConverter where T == Date {
 	}
 }
 
-extension ISO8601DateFormatter: @retroactive @unchecked Sendable {}
+extension ISO8601DateFormatter: @unchecked @retroactive Sendable {}
 
 extension ColumnValueConverter where T: Decodable {
 	/// Converts the BLOB value of a column to a `Decodable` instance.
 	/// - note: The BLOB value is interpreted  as encoded JSON data of `type`.
 	public static func json(_ type: T.Type = T.self, decoder: JSONDecoder = JSONDecoder()) -> ColumnValueConverter {
 		ColumnValueConverter { row, index in
-            do {
-                let b = try row.blob(at: index)
-                return try decoder.decode(type, from: b)
-            } catch {
-                // JMJ text can also be JSON in SQLite
-                guard let b = try row.text(at: index).data(using: .utf8)
-                else {
-                    throw DatabaseError("column \"\(index)\" isn't a valid JSON format")
-                }
-                return try decoder.decode(type, from: b)
-            }
+			let b = try row.blob(at: index)
+			return try decoder.decode(type, from: b)
 		}
 	}
 }

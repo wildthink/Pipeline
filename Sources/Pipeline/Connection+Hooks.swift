@@ -121,7 +121,7 @@ extension Connection {
 	}
 
 	/// An insert, delete, or update event on a rowid table.
-    public struct TableChangeEvent: Equatable {
+	public struct TableChangeEvent {
 		/// The type of row change.
 		public let changeType: RowChangeType
 		/// The name of the database containing the table that changed.
@@ -203,17 +203,6 @@ extension Connection {
 		tableChangeEventSubject
 			.eraseToAnyPublisher()
 	}
-    
-    /// Returns a publisher for commits to the database
-    ///
-    /// - note: The publisher uses the database's commit hook for event generation. If this
-    /// publisher is used the commit hook is unavailable.
-    ///
-    /// - returns: A publisher always returns true.
-    public var databaseDidCommitPublisher: AnyPublisher<Bool, Never> {
-        databaseDidCommitEventSubject
-            .eraseToAnyPublisher()
-    }
 }
 
 #endif

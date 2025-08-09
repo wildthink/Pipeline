@@ -104,7 +104,7 @@ extension Connection {
 	}
 
 	/// Possible ways to complete a transaction.
-	public enum TransactionCompletion {
+    public enum TransactionCompletion: Sendable {
 		/// The transaction should be committed.
 		case commit
 		/// The transaction should be rolled back.
@@ -123,7 +123,7 @@ extension Connection {
 	///
 	/// - parameter command: `.commit` if the transaction was committed or `.rollback` if the transaction was rolled back.
 	/// - parameter value: The object returned by the transaction block.
-	public typealias TransactionResult<T> = (command: TransactionCompletion, value: T)
+    public typealias TransactionResult<T: Sendable> = (command: TransactionCompletion, value: T)
 
 	/// Performs a transaction on the database.
 	///
@@ -136,7 +136,7 @@ extension Connection {
 	///
 	/// - note: If `block` throws an error the transaction will be rolled back and the error will be re-thrown.
 	/// - note: If an error occurs committing the transaction a rollback will be attempted and the error will be re-thrown.
-	@discardableResult public func transaction<T>(type: TransactionType = .deferred, _ block: TransactionBlock<T>) throws -> TransactionResult<T> {
+    @discardableResult public func transaction<T: Sendable>(type: TransactionType = .deferred, _ block: TransactionBlock<T>) throws -> TransactionResult<T> {
 		try begin(type: type)
 		do {
 			var command = TransactionCompletion.commit

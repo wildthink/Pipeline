@@ -23,7 +23,7 @@ import Foundation
 /// 		}
 /// 	}
 ///  ```
-public struct SQLParameter : Sendable{
+public struct SQLParameter: Sendable {
 	/// Binds a captured value to the SQL parameter at `index` in `statement`.
 	///
 	/// - parameter statement: A `Statement` object to receive the desired parameter.
@@ -548,12 +548,7 @@ extension SQLParameter {
     public static func json<T: Sendable>(_ value: T, encoder: JSONEncoder = JSONEncoder()) -> SQLParameter where T: Encodable {
 		return SQLParameter { statement, index in
 			let b = try encoder.encode(value)
-            // jmj SQLite prefers JSON as Text
-            if let s = String(data: b, encoding: .utf8) {
-                try statement.bind(text: s, toParameter: index)
-            } else {
-                try statement.bind(blob: b, toParameter: index)
-            }
+			try statement.bind(blob: b, toParameter: index)
 		}
 	}
 }

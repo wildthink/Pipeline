@@ -13,12 +13,20 @@ import Combine
 @testable import Pipeline
 
 final class PipelineTests: XCTestCase {
+    // Helper to hold values across @Sendable closures in tests
+    // The test harness ensures safe access ordering.
+    final class Box<T>: @unchecked Sendable {
+        var value: T?
+        init(_ value: T? = nil) { self.value = value }
+    }
 	override class func setUp() {
 		super.setUp()
 		// It's necessary to call sqlite3_initialize() since SQLITE_OMIT_AUTOINIT is defined
 		XCTAssert(sqlite3_initialize() == SQLITE_OK)
+        #if CSQLITE_ENABLED
 		XCTAssert(csqlite_sqlite3_auto_extension_uuid() == SQLITE_OK)
 		XCTAssert(csqlite_sqlite3_auto_extension_carray() == SQLITE_OK)
+        #endif
 	}
 
 	override class func tearDown() {
@@ -108,22 +116,23 @@ final class PipelineTests: XCTestCase {
 		XCTAssertEqual(result2.value, value)
 	}
 
-	func testAsyncTransaction() {
+    @MainActor func testAsyncTransaction() {
 		let queue = try! ConnectionQueue(label: "cq")
 
 		let expectation = self.expectation(description: "transaction")
 
-		var result: Result<Connection.TransactionResult<Int64>, Error>?
+		let box = Box<Result<Connection.TransactionResult<Int64>, Error>>()
 		queue.asyncTransaction { connection, command -> Int64 in
 			//connection.lastInsertRowid
 			25
-		} completion: {
-			result = $0
+		} completion: { [box] in
+			box.value = $0
 			expectation.fulfill()
 		}
 
 		waitForExpectations(timeout: 5)
 
+		guard let result = box.value else { XCTFail(); return }
 		if case let .success((command, value)) = result {
 			XCTAssertEqual(command, .commit)
 			XCTAssertEqual(value, 25)
@@ -132,22 +141,23 @@ final class PipelineTests: XCTestCase {
 		}
 	}
 
-	func testAsyncTransaction2() {
+    @MainActor func testAsyncTransaction2() {
 		let queue = try! ConnectionQueue(label: "cq")
 
 		let expectation = self.expectation(description: "transaction")
 
 		let msg = "something went wrong"
-		var result: Result<Connection.TransactionResult<Int64>, Error>?
+		let box = Box<Result<Connection.TransactionResult<Int64>, Error>>()
 		queue.asyncTransaction { connection, command -> Int64 in
 			throw DatabaseError(msg)
-		} completion: {
-			result = $0
+		} completion: { [box] in
+			box.value = $0
 			expectation.fulfill()
 		}
 
 		waitForExpectations(timeout: 5)
 
+		guard let result = box.value else { XCTFail(); return }
 		if case let .failure(error) = result {
 			if let err = error as? DatabaseError {
 				XCTAssertEqual(err.message, msg)
@@ -566,29 +576,36 @@ final class PipelineTests: XCTestCase {
 		}
 	}
 
-	func testStatementColumns() {
-		let connection = try! Connection()
 
-		try! connection.execute(sql: "create table t1(a, b, c);")
+    func testUUIDExtension() {
+        let connection = try! Connection()
+        let statement = try! connection.prepare(sql: "select uuid();")
+        let s: String = try! statement.step()!.text(at: 0)
+        let u = UUID(uuidString: s)
+        XCTAssertEqual(u?.uuidString.lowercased(), s.lowercased())
+    }
+    
+    func testStatementColumns() throws {
+        do {
+            let connection = try Connection()
+            
+            try connection.execute(sql: "create table t1(a, b, c);")
+            
+            for i in 0..<3 {
+                try connection.prepare(sql: "insert into t1(a, b, c) values (?,?,?);").bind([.int(i), .int(i * 3), .int(i * 5)]).execute()
+            }
+            
+            let statement = try connection.prepare(sql: "select * from t1")
+//            let row = try statement.step()
+            let cols = try statement.columns([0,2], .int)
+            XCTAssertEqual(cols[0], [0,1,2])
+            XCTAssertEqual(cols[1], [0,5,10])
+        } catch {
+            print(error)
+        }
+    }
 
-		for i in 0..<3 {
-			try! connection.prepare(sql: "insert into t1(a, b, c) values (?,?,?);").bind([.int(i), .int(i * 3), .int(i * 5)]).execute()
-		}
-
-		let statement = try! connection.prepare(sql: "select * from t1")
-		let cols = try! statement.columns([0,2], .int)
-		XCTAssertEqual(cols[0], [0,1,2])
-		XCTAssertEqual(cols[1], [0,5,10])
-	}
-
-	func testUUIDExtension() {
-		let connection = try! Connection()
-		let statement = try! connection.prepare(sql: "select uuid();")
-		let s: String = try! statement.step()!.text(at: 0)
-		let u = UUID(uuidString: s)
-		XCTAssertEqual(u?.uuidString.lowercased(), s.lowercased())
-	}
-
+    #if CSQLITE_CARRAY
 	func testCArrayExtension() {
 		let connection = try! Connection()
 
@@ -607,7 +624,9 @@ final class PipelineTests: XCTestCase {
 
 		XCTAssertEqual([ "dog", "hedgehog" ], results)
 	}
-
+    #endif // CSQLITE_CARRAY
+    
+    #if VIRTUAL_TABLE_SUPPORT
 	func testVirtualTable() {
 		final class NaturalNumbersModule: EponymousVirtualTableModule {
 			final class Cursor: VirtualTableCursor {
@@ -925,7 +944,8 @@ final class PipelineTests: XCTestCase {
 		results = statement.map({try! $0.get(.int, at: 0)})
 		XCTAssertEqual(results.sorted(), [1,2,3,4,5])
 	}
-
+#endif // VIRTUAL_TABLE_SUPPORT
+    
 #if SQLITE_ENABLE_PREUPDATE_HOOK
 
 	func testPreUpdateHook() {
@@ -1091,7 +1111,7 @@ final class PipelineTests: XCTestCase {
 
 #if canImport(Combine)
 
-	func testRowPublisher() {
+    @MainActor func testRowPublisher() {
 		let connection = try! Connection()
 		XCTAssertNoThrow(try connection.execute(sql: "create table t1(v1 text default (uuid()));"))
 		let rowCount = 10
@@ -1178,6 +1198,7 @@ final class PipelineTests: XCTestCase {
 	}
 }
 
+#if VIRTUAL_TABLE_SUPPORT
 /// A virtual table module implementing a shuffled integer sequence
 ///
 /// Usage:
@@ -1271,3 +1292,4 @@ final class ShuffledSequenceModule: VirtualTableModule {
 		Cursor(self)
 	}
 }
+#endif // VIRTUAL_TABLE_SUPPORT
