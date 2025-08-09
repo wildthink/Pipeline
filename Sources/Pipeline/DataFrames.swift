@@ -7,6 +7,7 @@
 
 import CoreGraphics
 import Foundation
+
 #if TABULAR_DATA_SWIFTPM
 import TabularData
 
@@ -33,9 +34,7 @@ extension Connection {
     }
 }
 
-protocol AnyOptional {
-    
-}
+protocol AnyOptional {  }
 
 extension Optional: AnyOptional {}
 
