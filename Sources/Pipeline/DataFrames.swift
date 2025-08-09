@@ -8,6 +8,7 @@
 import CoreGraphics
 import Foundation
 
+#if TABULAR_DATA_SWIFTPM
 import TabularData
 
 // MARK: SQLite Connection
@@ -32,6 +33,10 @@ extension Connection {
         try checkSQLite(sqlite3_exec(ref, statements, nil, nil, nil))
     }
 }
+
+protocol AnyOptional {  }
+
+extension Optional: AnyOptional {}
 
 // MARK: SQLite Statement
 public typealias SQLiteStatement = Statement
@@ -398,3 +403,4 @@ extension DataFrame {
         try writeRows(statement: statement)
     }
 }
+#endif // TABULAR_DATA_SWIFTPM
