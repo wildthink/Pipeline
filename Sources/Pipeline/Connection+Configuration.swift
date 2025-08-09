@@ -6,7 +6,7 @@
 
 import Foundation
 
-
+#if CSQLITE_ENABLED
 extension Connection {
 	/// Enables or disables the enforcement of foreign key constraints for the database connection.
 	/// - seealso: [SQLite Foreign Key Support](https://sqlite.org/foreignkeys.html)
@@ -202,3 +202,4 @@ extension Connection {
 		}
 	}
 }
+#endif // CSQLITE_ENABLED

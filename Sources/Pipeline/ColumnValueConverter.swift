@@ -154,6 +154,7 @@ extension Statement {
 }
 
 extension Statement {
+    #if CSQLITE_ENABLED
 	/// Returns the values of the column at `indexes` converted to `type` for each row in the result set.
 	///
 	/// - note: Column indexes are 0-based.  The leftmost column in a row has index 0.
@@ -175,7 +176,8 @@ extension Statement {
 		}
 		return values
 	}
-
+    #endif
+    
 	/// Returns the values of the column with `names` converted to `type` for each row in the result set.
 	///
 	/// - parameter names: The names of the desired columns.

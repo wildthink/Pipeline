@@ -9,6 +9,7 @@ import Foundation
 
 import CPipeline
 
+#if CSQLITE_ENABLED
 /// A cursor for an SQLite virtual table.
 public protocol VirtualTableCursor {
 	/// Returns the value of  column `index` in the row at which the cursor is pointing.
@@ -597,3 +598,4 @@ private func xRowid(_ pCursor: UnsafeMutablePointer<sqlite3_vtab_cursor>?, _ pRo
 		}
 	}
 }
+#endif // CSQLITE_ENABLED

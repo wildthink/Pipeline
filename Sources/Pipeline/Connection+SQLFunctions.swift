@@ -320,9 +320,11 @@ private extension SQLFunctionFlags {
 		if contains(.innocuous) {
 			flags |= SQLITE_INNOCUOUS
 		}
+        #if SQLITE_RESULT_SUBTYPE
 		if contains(.resultSubtype) {
 			flags |= SQLITE_RESULT_SUBTYPE
 		}
+        #endif
 		return flags
 	}
 }

@@ -7,7 +7,7 @@
 import Foundation
 
 
-//#if CSQLITE_CARRAY
+#if CSQLITE_CARRAY
 
 extension SQLParameter {
 	/// Binds a collection of `Int32` values using the sqlite3 carray extension..
@@ -97,4 +97,4 @@ private func scan<S, Result>(_ sequence: S, _ initialResult: Result, _ nextParti
 	return result
 }
 
-//#endif
+#endif // CSQLITE_CARRAY

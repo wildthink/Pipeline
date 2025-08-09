@@ -16,8 +16,10 @@ final class PipelineTests: XCTestCase {
 		super.setUp()
 		// It's necessary to call sqlite3_initialize() since SQLITE_OMIT_AUTOINIT is defined
 		XCTAssert(sqlite3_initialize() == SQLITE_OK)
+        #if CSQLITE_ENABLED
 		XCTAssert(csqlite_sqlite3_auto_extension_uuid() == SQLITE_OK)
 		XCTAssert(csqlite_sqlite3_auto_extension_carray() == SQLITE_OK)
+        #endif
 	}
 
 	override class func tearDown() {
@@ -527,6 +529,7 @@ final class PipelineTests: XCTestCase {
 		}
 	}
 
+    #if CSQLITE_ENABLED
 	func testStatementColumns() {
 		let connection = try! Connection()
 
@@ -541,7 +544,8 @@ final class PipelineTests: XCTestCase {
 		XCTAssertEqual(cols[0], [0,1,2])
 		XCTAssertEqual(cols[1], [0,5,10])
 	}
-
+    #endif // CSQLITE_ENABLED
+    
 	func testUUIDExtension() {
 		let connection = try! Connection()
 		let statement = try! connection.prepare(sql: "select uuid();")
@@ -549,7 +553,7 @@ final class PipelineTests: XCTestCase {
 		let u = UUID(uuidString: s)
 		XCTAssertEqual(u?.uuidString.lowercased(), s.lowercased())
 	}
-
+    #if CSQLITE_CARRAY
 	func testCArrayExtension() {
 		let connection = try! Connection()
 
@@ -568,7 +572,9 @@ final class PipelineTests: XCTestCase {
 
 		XCTAssertEqual([ "dog", "hedgehog" ], results)
 	}
-
+    #endif
+    
+    #if CSQLITE_ENABLED
 	func testVirtualTable() {
 		final class NaturalNumbersModule: EponymousVirtualTableModule {
 			final class Cursor: VirtualTableCursor {
@@ -886,7 +892,8 @@ final class PipelineTests: XCTestCase {
 		results = statement.map({try! $0.get(.int, at: 0)})
 		XCTAssertEqual(results.sorted(), [1,2,3,4,5])
 	}
-
+    #endif // CSQLITE_ENABLED
+    
 #if SQLITE_ENABLE_PREUPDATE_HOOK
 
 	func testPreUpdateHook() {
@@ -1139,6 +1146,7 @@ final class PipelineTests: XCTestCase {
 	}
 }
 
+#if CSQLITE_ENABLED
 /// A virtual table module implementing a shuffled integer sequence
 ///
 /// Usage:
@@ -1232,3 +1240,4 @@ final class ShuffledSequenceModule: VirtualTableModule {
 		Cursor(self)
 	}
 }
+#endif // CSQLITE_ENABLED

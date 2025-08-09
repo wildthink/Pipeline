@@ -5,7 +5,7 @@
 //
 
 import Foundation
-@_exported import CSQLite
+@_exported import SQLite3
 
 /// SQLite library information.
 public struct SQLite {
