@@ -18,7 +18,7 @@ import Combine
 public typealias SQLiteDatabaseConnection = OpaquePointer
 
 /// A connection to an [SQLite](https://sqlite.org) database.
-public final class Connection {
+public final class Connection: @unchecked Sendable {
 	/// The underlying `sqlite3 *` connection handle.
 	public let databaseConnection: SQLiteDatabaseConnection
 
@@ -174,7 +174,12 @@ extension Connection {
 
 	/// `true` if an interrupt is currently in effect
 	public var isInterrupted: Bool {
-		sqlite3_is_interrupted(databaseConnection) != 0
+        if #available(iOS 17.2, *) {
+            sqlite3_is_interrupted(databaseConnection) != 0
+        } else {
+            false
+            // Fallback on earlier versions
+        }
 	}
 
 	/// Returns the name of the *n*th attached database.

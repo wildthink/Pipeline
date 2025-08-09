@@ -32,7 +32,7 @@ import Foundation
 ///     // All database operations here are contained within a transaction
 /// }
 /// ```
-public final class ConnectionQueue {
+public final class ConnectionQueue: Sendable {
 	/// The underlying database connection.
 	let connection: Connection
 	/// The dispatch queue used to serialize access to the underlying database connection.
@@ -93,7 +93,7 @@ public final class ConnectionQueue {
 	/// A block called with the result of an asynchronous database operation.
 	///
 	/// - parameter result: A `Result` object containing the result of the operation.
-	public typealias CompletionHandler<T> = (_ result: Result<T, Error>) -> Void
+	public typealias CompletionHandler<T> = @Sendable (_ result: Result<T, Error>) -> Void
 
 	/// Submits an asynchronous operation to the queue.
 	///
@@ -102,7 +102,7 @@ public final class ConnectionQueue {
 	/// - parameter block: A closure performing the database operation.
 	/// - parameter connection: A `Connection` used for database access within `block`.
 	/// - parameter completion: A closure called with the result of the operation.
-	public func async<T>(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping (_ connection: Connection) throws -> T, completion: @escaping CompletionHandler<T>) {
+	public func async<T>(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @Sendable @escaping (_ connection: Connection) throws -> T, completion: @escaping CompletionHandler<T>) {
 		queue.async(group: group, qos: qos) {
 			do {
 				let result = try block(self.connection)
@@ -170,7 +170,12 @@ public final class ConnectionQueue {
 	/// - parameter qos: The quality of service for `block`.
 	/// - parameter block: A closure performing the database operation.
 	/// - parameter completion: A closure called with the result of the savepoint.
-	public func asyncSavepoint<T>(group: DispatchGroup? = nil, qos: DispatchQoS = .default, block: @escaping Connection.SavepointBlock<T>, completion: @escaping CompletionHandler<Connection.SavepointResult<T>>) {
+	public func asyncSavepoint<T>(
+        group: DispatchGroup? = nil,
+        qos: DispatchQoS = .default,
+        block: @escaping Connection.SavepointBlock<T>,
+        completion: @escaping CompletionHandler<Connection.SavepointResult<T>>
+    ) {
 		queue.async(group: group, qos: qos) {
 			do {
 				let result = try self.connection.savepoint(block: block)

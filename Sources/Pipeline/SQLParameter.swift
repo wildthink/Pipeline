@@ -23,14 +23,14 @@ import Foundation
 /// 		}
 /// 	}
 ///  ```
-public struct SQLParameter {
+public struct SQLParameter : Sendable{
 	/// Binds a captured value to the SQL parameter at `index` in `statement`.
 	///
 	/// - parameter statement: A `Statement` object to receive the desired parameter.
 	/// - parameter index: The index of the SQL parameter to bind.
 	///
 	/// - throws: An error if the value could not be bound.
-	public let bind: (_ statement: Statement, _ index: Int) throws -> ()
+	public let bind: @Sendable (_ statement: Statement, _ index: Int) throws -> ()
 }
 
 extension Statement {
@@ -545,7 +545,7 @@ extension SQLParameter {
 extension SQLParameter {
 	/// Binds an `Encodable` instance as encoded JSON data.
 	/// - parameter encoder: The encoder to use to generate the encoded JSON data.
-	public static func json<T>(_ value: T, encoder: JSONEncoder = JSONEncoder()) -> SQLParameter where T: Encodable {
+    public static func json<T: Sendable>(_ value: T, encoder: JSONEncoder = JSONEncoder()) -> SQLParameter where T: Encodable {
 		return SQLParameter { statement, index in
 			let b = try encoder.encode(value)
             // jmj SQLite prefers JSON as Text
@@ -613,7 +613,7 @@ extension SQLParameter {
 
 extension SQLParameter {
 	/// Binds an `NSCoding` instance as keyed archive data using `NSKeyedArchiver`.
-	public static func nsKeyedArchive<T>(_ value: T) -> SQLParameter where T: NSObject, T: NSCoding {
+    public static func nsKeyedArchive<T: Sendable>(_ value: T) -> SQLParameter where T: NSObject, T: NSCoding {
 		SQLParameter { statement, index in
 			let b = try NSKeyedArchiver.archivedData(withRootObject: value, requiringSecureCoding: true)
 			try statement.bind(blob: b, toParameter: index)

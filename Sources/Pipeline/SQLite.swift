@@ -5,7 +5,8 @@
 //
 
 import Foundation
-@_exported import CSQLite
+@_exported import SQLite3
+//@_exported import CSQLite
 
 
 /// SQLite library information.

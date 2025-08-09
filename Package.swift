@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -17,7 +17,7 @@ let package = Package(
 	name: "Pipeline",
 	platforms: [
         .macOS(.v14),
-        .iOS(.v16),
+        .iOS(.v17),
 	],
 	products: [
 		.library(
@@ -28,24 +28,27 @@ let package = Package(
 		// Dependencies declare other packages that this package depends on.
 		// .package(url: /* package url */, from: "1.0.0"),
 //		.package(url: "https://github.com/wildthink/CSQLite", from: "3.47.0")
-        .package(url: "https://github.com/wildthink/CSQLite", branch: "main")
+//        .package(url: "https://github.com/wildthink/CSQLite", branch: "main")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package. A target can define a module or a test suite.
 		// Targets can depend on other targets in this package, and on products in packages this package depends on.
 		.target(
 			name: "CPipeline",
-			dependencies: ["CSQLite"]),
+			dependencies: []),
 		.target(
 			name: "Pipeline",
-			dependencies: ["CSQLite", "CPipeline"],
+			dependencies: [
+                "CPipeline",
+//                "CSQLite",
+            ],
 			cSettings: [
 			],
 			swiftSettings: [
 			]),
 		.testTarget(
 			name: "PipelineTests",
-			dependencies: ["Pipeline", "CSQLite"],
+			dependencies: ["Pipeline"],
             cSettings: [
             ],
 			swiftSettings: [

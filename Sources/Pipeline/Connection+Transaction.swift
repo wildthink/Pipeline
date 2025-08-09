@@ -10,7 +10,7 @@ import Foundation
 /// Possible database transaction types.
 ///
 /// - seealso: [Transactions in SQLite](https://sqlite.org/lang_transaction.html)
-public enum TransactionType {
+public enum TransactionType: Sendable {
 	/// A deferred transaction.
 	case deferred
 	/// An immediate transaction.
@@ -22,7 +22,7 @@ public enum TransactionType {
 /// Possible transaction states for a database.
 ///
 /// - seealso: [Determine the transaction state of a database](https://www.sqlite.org/c3ref/txn_state.html)
-public enum TransactionState {
+public enum TransactionState: Sendable {
 	/// No transaction is currently pending.
 	case none
 	/// The database is currently in a read transaction.
@@ -117,7 +117,7 @@ extension Connection {
 	/// - parameter command: `.commit` if the transaction should be committed or `.rollback` if the transaction should be rolled back.
 	///
 	/// - returns: An object.
-	public typealias TransactionBlock<T> = (_ connection: Connection, _ command: inout TransactionCompletion) throws -> T
+	public typealias TransactionBlock<T> = @Sendable (_ connection: Connection, _ command: inout TransactionCompletion) throws -> T
 
 	/// The result of a transaction.
 	///

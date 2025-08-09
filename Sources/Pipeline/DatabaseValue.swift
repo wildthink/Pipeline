@@ -10,7 +10,7 @@ import Foundation
 /// A fundamental data type value in an SQLite database.
 ///
 /// - seealso: [Datatypes In SQLite](https://sqlite.org/datatype3.html)
-public enum DatabaseValue {
+public enum DatabaseValue: Sendable {
 	/// A signed integer value.
 	case integer(Int64)
 	/// A floating-point value.

@@ -61,7 +61,7 @@ extension Connection {
 	/// - parameter command: `.release` if the savepoint should be released or `.rollback` if the savepoint should be rolled back.
 	///
 	/// - returns: An object.
-	public typealias SavepointBlock<T> = (_ connection: Connection, _ command: inout SavepointCompletion) throws -> T
+	public typealias SavepointBlock<T> = @Sendable (_ connection: Connection, _ command: inout SavepointCompletion) throws -> T
 
 	/// The result of a savepoint transaction.
 	///

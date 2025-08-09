@@ -19,7 +19,7 @@ public typealias SQLFunction = (_ values: [DatabaseValue]) throws -> DatabaseVal
 /// Custom SQL function flags.
 ///
 /// - seealso: [Function Flags](https://www.sqlite.org/c3ref/c_deterministic.html)
-public struct SQLFunctionFlags: OptionSet {
+public struct SQLFunctionFlags: OptionSet, Sendable {
 	public let rawValue: Int
 	public init(rawValue: Int) {
 		self.rawValue = rawValue
@@ -321,7 +321,7 @@ private extension SQLFunctionFlags {
 			flags |= SQLITE_INNOCUOUS
 		}
 		if contains(.resultSubtype) {
-			flags |= SQLITE_RESULT_SUBTYPE
+//			flags |= SQLITE_RESULT_SUBTYPE
 		}
 		return flags
 	}

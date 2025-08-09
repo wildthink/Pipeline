@@ -59,7 +59,7 @@ public enum FundamentalType {
 /// ```
 ///
 /// This allows for simple result row processing at the expense of error handling.
-public struct Row {
+public struct Row: @unchecked Sendable {
 	/// The statement owning this row.
 	public let statement: Statement
 }

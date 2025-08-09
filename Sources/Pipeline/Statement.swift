@@ -236,7 +236,8 @@ public final class Statement {
 	/// - throws: An error if the statement's explain mode could not be changed.
 	///
 	/// - seealso: [Change The EXPLAIN Setting For A Prepared Statement](https://sqlite.org/c3ref/stmt_explain.html)
-	public func explain(_ mode: ExplainMode) throws {
+    @available(iOS 17.2, *)
+    public func explain(_ mode: ExplainMode) throws {
 		let eMode: Int32
 		switch mode {
 		case .normal:
