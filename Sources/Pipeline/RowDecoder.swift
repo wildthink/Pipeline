@@ -52,6 +52,14 @@ public class RowDecoder: TopLevelDecoder {
 		let decoder = RowDecoderGuts(payload: .row(row), codingPath: [], userInfo: userInfo, options: options)
 		return try T(from: decoder)
 	}
+    
+    public init(
+        dateDecodingMethod: DateDecodingMethod = .timeIntervalSince1970,
+        userInfo: [CodingUserInfoKey : Any] = [:]
+    ) {
+        self.dateDecodingMethod = dateDecodingMethod
+        self.userInfo = userInfo
+    }
 }
 
 private struct RowDecoderGuts {
@@ -111,15 +119,31 @@ private extension RowDecoderGuts {
 		return try decode(value, as: type)
 	}
 
-	func decode<T>(_ value: DatabaseValue, as type: T.Type) throws -> T where T : Decodable {
-		if type == Date.self {
-			return try decodeDate(value) as! T
-		} else if type == URL.self {
-			return try decodeURL(value) as! T
-		} else {
-			return try T(from: self)
-		}
-	}
+    func decode<T>(_ value: DatabaseValue, as type: T.Type) throws -> T where T : Decodable {
+        // Builtin Types
+        switch type {
+            case is Date.Type:
+                return try decodeDate(value) as! T
+            case is URL.Type:
+                return try decodeURL(value) as! T
+            default:
+                break
+        }
+        // Otherwise we try and decode the value of the
+        // column if the column value is Text or Data
+        switch value {
+            case .blob(let data):
+                return try JSONDecoder().decode(T.self, from: data)
+            case .text(let text):
+                if let data = text.data(using: .utf8) {
+                    return try JSONDecoder().decode(T.self, from: data)
+                } else {
+                    return try T(from: self)
+                }
+            default:
+                return try T(from: self)
+        }
+    }
 
 	func decodeFixedWidthInteger<T>(_ value: DatabaseValue) throws -> T where T: FixedWidthInteger {
 		guard case let .integer(i) = value else {

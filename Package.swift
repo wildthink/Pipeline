@@ -14,7 +14,7 @@ let package = Package(
 	name: "Pipeline",
 	platforms: [
         .macOS(.v15),
-        .iOS(.v17),
+        .iOS(.v18),
 	],
 	products: [
 		// Products define the executables and libraries a package produces, and make them visible to other packages.
