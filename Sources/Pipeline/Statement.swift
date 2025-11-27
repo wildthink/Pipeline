@@ -4,7 +4,7 @@
 // MIT license
 //
 
-import os.log
+import OSLog
 import Foundation
 
 
@@ -78,8 +78,13 @@ public final class Statement: @unchecked Sendable {
 	deinit {
 		let result = sqlite3_finalize(preparedStatement)
 		if result != SQLITE_OK  {
-			os_log(.info, "Error finalizing prepared statement: %{public}@ [%d]", sqlite3_errstr(result), result)
-		}
+            if let cstr = sqlite3_errstr(result) {
+                let msg = String(cString: cstr)
+                plog.info("Error (\(result)) finalizing prepared statement: \(msg, privacy: .public)")
+            } else {
+                plog.info("Error (\(result)) finalizing prepared statement")
+            }
+        }
 	}
 
 	/// Creates a compiled SQL statement.

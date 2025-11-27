@@ -4,9 +4,10 @@
 // MIT license
 //
 
-import os.log
+import OSLog
 import Foundation
 
+let plog = Logger(subsystem: "com.wildthink.pipeline", category: "sqlite")
 
 /// An `sqlite3_blob *` object.
 ///
@@ -48,7 +49,12 @@ public final class BLOB {
 	deinit {
 		let result = sqlite3_blob_close(blob);
 		if result != SQLITE_OK  {
-			os_log(.info, "Error closing BLOB: %{public}@ [%d]", sqlite3_errstr(result), result)
+            if let cstr = sqlite3_errstr(result) {
+                let errorMessage = String(cString: cstr)
+                plog.notice("Error (\(result, privacy: .public)) closing BLOB: \(errorMessage)")
+            } else {
+                plog.notice("Error (\(result, privacy: .public)) closing BLOB")
+            }
 		}
 	}
 

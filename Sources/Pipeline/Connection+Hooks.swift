@@ -111,17 +111,27 @@ extension Connection {
 
 extension Connection {
 	/// Possible types of row changes.
-	public enum RowChangeType {
+    public enum RowChangeType: Sendable, CustomStringConvertible {
+        
 		/// A row was inserted.
 		case insert
 		/// A row was deleted.
 		case delete
 		/// A row was updated.
 		case update
+        
+        public var description: String {
+            switch self {
+                case .insert: "INSERT"
+                case .delete: "DELETE"
+                case .update: "UPDATE"
+            }
+        }
+
 	}
 
 	/// An insert, delete, or update event on a rowid table.
-	public struct TableChangeEvent {
+    public struct TableChangeEvent: Sendable, CustomStringConvertible {
 		/// The type of row change.
 		public let changeType: RowChangeType
 		/// The name of the database containing the table that changed.
@@ -130,6 +140,11 @@ extension Connection {
 		public let table: String
 		/// The rowid of the row that changed.
 		public let rowid: Int64
+        
+        /// Example: "DID UPDATE row: 1 of main my_table"
+        public var description: String {
+            "DID \(changeType) [\(rowid)] of \(database) \(table)"
+        }
 	}
 
 	/// A hook called when a row is inserted, deleted, or updated in a rowid table.

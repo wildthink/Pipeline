@@ -4,7 +4,7 @@
 // MIT license
 //
 
-import os.log
+import OSLog
 import Foundation
 
 
@@ -53,11 +53,21 @@ public final class Connection: @unchecked Sendable {
 			if result == SQLITE_BUSY {
 				var preparedStatement: SQLitePreparedStatement? = sqlite3_next_stmt(databaseConnection, nil)
 				while preparedStatement != nil {
-					os_log(.info, "Prepared statement not finalized in sqlite3_close: \"%{public}@\"", sqlite3_sql(preparedStatement))
-					preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
+                    if let cstr = sqlite3_sql(preparedStatement) {
+                        let msg = String(cString: cstr)
+                        plog.info("Prepared statement not finalized in sqlite3_close: \(msg, privacy: .public)")
+                    } else {
+                        plog.info("Prepared statement not finalized in sqlite3_close()")
+                    }
+                    preparedStatement = sqlite3_next_stmt(databaseConnection, preparedStatement)
 				}
 			} else {
-				os_log(.info, "Error closing database connection: %{public}@ [%d]", sqlite3_errstr(result), result)
+                if let cstr = sqlite3_errstr(result) {
+                    let errorMessage = String(cString: cstr)
+                    plog.notice("Error closing database connection: (\(result, privacy: .public)) closing BLOB: \(errorMessage)")
+                } else {
+                    plog.notice("Error closing database connection: (\(result, privacy: .public)) closing BLOB")
+                }
 			}
 		}
 //		_ = sqlite3_close_v2(databaseConnection)

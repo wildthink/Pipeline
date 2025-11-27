@@ -4,7 +4,7 @@
 // MIT license
 //
 
-import os.log
+import OSLog
 import Foundation
 
 
@@ -124,8 +124,8 @@ extension Connection {
 			}
 
 			catch let error {
-				os_log("Error constructing FTS5 tokenizer: %{public}@", type: .info, error.localizedDescription)
-				return SQLITE_ERROR
+                plog.info("Error constructing FTS5 tokenizer: \(error.localizedDescription, privacy: .public)")
+ 				return SQLITE_ERROR
 			}
 
 			// tokenizer must live until the xDelete function is invoked; store it as a +1 object in ptr

@@ -4,7 +4,7 @@
 // MIT license
 //
 
-import os.log
+import OSLog
 import Foundation
 
 
@@ -598,7 +598,7 @@ extension Connection {
 				}
 
 				catch let error {
-					os_log("Error processing changeset conflict: %{public}@", type: .info, (error as? SQLiteError)?.description ?? error.localizedDescription)
+					log("Error processing changeset conflict: %{public}@", type: .info, (error as? SQLiteError)?.description ?? error.localizedDescription)
 					return SQLITE_CHANGESET_ABORT
 				}
 
