@@ -35,6 +35,18 @@ public final class Connection: @unchecked Sendable {
 		self.databaseConnection = databaseConnection
 	}
 
+    public var name: String? {
+        // 0 is the main database
+        if let cstr = sqlite3_db_name(self.databaseConnection, 0) {
+            withUnsafeBytes(of: cstr) {
+                let data = Data($0)
+                return String(data: data, encoding: .utf8)
+            }
+        } else {
+            nil
+        }
+    }
+    
 	deinit {
 		let result = sqlite3_close(databaseConnection)
 		if result != SQLITE_OK  {
