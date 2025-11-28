@@ -1,5 +1,5 @@
 //
-// Copyright © 2015 - 2022 Stephen F. Booth <me@sbooth.org>
+// Copyright © 2015 - 2025 Stephen F. Booth <me@sbooth.org>
 // Part of https://github.com/sbooth/Pipeline
 // MIT license
 //
@@ -575,6 +575,25 @@ final class PipelineTests: XCTestCase {
     #endif
     
     #if CSQLITE_ENABLED
+	func testCArrayExtension2() {
+		let connection = try! Connection()
+
+		try! connection.execute(sql: "create table numbers(val);")
+
+		try! connection.prepare(sql: "insert into numbers(val) values (1);").execute()
+		try! connection.prepare(sql: "insert into numbers(val) values (3);").execute()
+		try! connection.prepare(sql: "insert into numbers(val) values (2);").execute()
+		try! connection.prepare(sql: "insert into numbers(val) values (4);").execute()
+
+		let vals: [Int32] = [ 1, 2, 33 ]
+		let statement = try! connection.prepare(sql: "SELECT * FROM numbers WHERE val IN carray(?1);")
+		try! statement.bind(.carray(vals), toParameter: 1)
+
+		let results: [Int64] = statement.map({try! $0.integer(at: 0)})
+
+		XCTAssertEqual([ 1, 2 ], results)
+	}
+
 	func testVirtualTable() {
 		final class NaturalNumbersModule: EponymousVirtualTableModule {
 			final class Cursor: VirtualTableCursor {
