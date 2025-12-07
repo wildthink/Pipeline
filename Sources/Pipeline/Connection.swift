@@ -21,7 +21,7 @@ public typealias SQLiteDatabaseConnection = OpaquePointer
 public final class Connection: @unchecked Sendable {
 	/// The underlying `sqlite3 *` connection handle.
 	nonisolated(unsafe)
-    let databaseConnection: SQLiteDatabaseConnection
+    public let databaseConnection: SQLiteDatabaseConnection
 
 	/// The connection's custom busy handler.
 	var busyHandler: UnsafeMutablePointer<BusyHandler>?
@@ -82,6 +82,8 @@ public final class Connection: @unchecked Sendable {
 	/// - throws: An error if the connection could not be created.
 	public convenience init(inMemory: Bool = true) throws {
 		var db: SQLiteDatabaseConnection?
+        try SQLite.initialize()
+
 		let path = inMemory ? ":memory:" : ""
 		let result = sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil)
 		guard result == SQLITE_OK else {
@@ -99,6 +101,8 @@ public final class Connection: @unchecked Sendable {
 	/// - throws: An error if the connection could not be created.
 	public convenience init(readingFrom url: URL) throws {
 		var db: SQLiteDatabaseConnection?
+        try SQLite.initialize()
+
 		try url.withUnsafeFileSystemRepresentation { path in
 			let result = sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil)
 			guard result == SQLITE_OK else {
@@ -118,6 +122,7 @@ public final class Connection: @unchecked Sendable {
 	/// - throws: An error if the connection could not be created.
 	public convenience init(url: URL, create: Bool = true) throws {
 		var db: SQLiteDatabaseConnection?
+        try SQLite.initialize()
 		try url.withUnsafeFileSystemRepresentation { path in
 			var flags = SQLITE_OPEN_READWRITE
 			if create {
