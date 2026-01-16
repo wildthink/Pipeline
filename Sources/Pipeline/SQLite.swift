@@ -5,7 +5,11 @@
 //
 
 import Foundation
+#if canImport(CSQLite)
+@_exported import CSQLite
+#else
 @_exported import SQLite3
+#endif
 
 /// SQLite library information.
 public struct SQLite {
